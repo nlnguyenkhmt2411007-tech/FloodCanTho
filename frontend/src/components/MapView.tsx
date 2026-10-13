@@ -85,7 +85,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const currentTileLayerRef = useRef<L.TileLayer | null>(null);
 
   // Quản lý nguồn tile: mặc định là OpenStreetMap chính thức (osm-official)
-  const [activeProviderId, setActiveProviderId] = useState<'osm-official' | 'osm-carto' | 'osm-fr'>('osm-official');
+  const [activeProviderId, setActiveProviderId] = useState<'osm-official' | 'osm-carto' | 'osm-fr'>('osm-fr');
   const [tileErrorCount, setTileErrorCount] = useState<number>(0);
   const [tileSuccessCount, setTileSuccessCount] = useState<number>(0);
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
