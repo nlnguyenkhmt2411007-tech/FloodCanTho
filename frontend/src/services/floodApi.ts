@@ -16,7 +16,7 @@ import {
 } from '../types/flood';
 
 const STORAGE_KEY_API_URL = 'floodcantho_backend_api_url';
-export const DEFAULT_API_URL = 'http://127.0.0.1:8000';
+export const DEFAULT_API_URL = 'https://floodcantho.onrender.com';;
 
 export function getApiBaseUrl(): string {
   if (typeof window === 'undefined') return DEFAULT_API_URL;
