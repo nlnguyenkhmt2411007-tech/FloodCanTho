@@ -1,0 +1,6 @@
+{
+  "name": "FloodCanTho - Hệ thống hỗ trợ đánh giá nguy cơ ngập lụt Cần Thơ",
+  "description": "Hệ thống hỗ trợ đánh giá nguy cơ ngập lụt tại Cần Thơ bằng Machine Learning và bản đồ tương tác đa kịch bản chu kỳ lặp lại (Đồ án KHMT CTUT).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

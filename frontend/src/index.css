@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* Leaflet Container & Marker Enhancements */
+.leaflet-container {
+  font-family: inherit;
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  background-color: #f1f5f9;
+  z-index: 1;
+}
+
+/* Ensure Tailwind base image reset doesn't break Leaflet tiles */
+.leaflet-pane img,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container img {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.custom-landmark-icon,
+.target-pin-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Custom scrollbar utility */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

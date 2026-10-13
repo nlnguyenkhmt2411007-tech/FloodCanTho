@@ -1,0 +1,30 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# React / Node.js
+node_modules/
+dist/
+build/
+coverage/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files
+*.log
+.DS_Store
+
+# Machine Learning models
+models/*.joblib
+models/*.pkl
+
+# Large research datasets
+data/raw/
+data/processed/
+FloodCanTho-frontend.zip
