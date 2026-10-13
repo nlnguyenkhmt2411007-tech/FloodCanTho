@@ -13,6 +13,14 @@ DATA_DIR = ROOT / "data" / "raw"
 
 RETURN_PERIODS = [2, 5, 10, 20, 50, 100]
 DEPTH_THRESHOLD_M = 0.30
+def get_raster_path(period: int) -> Path:
+    original = DATA_DIR / f"{period}years.tif"
+    compressed = DATA_DIR / f"{period}years_compressed.tif"
+
+    if original.is_file():
+        return original
+
+    return compressed
 
 app = FastAPI(
     title="FloodCanTho API",
@@ -47,11 +55,10 @@ def home():
 
 
 @app.get("/api/health")
+@app.get("/api/health")
 def health():
     files = {
-        str(period): (
-            DATA_DIR / f"{period}years.tif"
-        ).exists()
+        str(period): get_raster_path(period).is_file()
         for period in RETURN_PERIODS
     }
 
@@ -75,7 +82,7 @@ def predict(request: FloodRequest):
             detail="Chu ky lap lai khong hop le",
         )
 
-    raster_path = DATA_DIR / f"{period}years.tif"
+    raster_path = get_raster_path(period)
 
     if not raster_path.exists():
         raise HTTPException(
