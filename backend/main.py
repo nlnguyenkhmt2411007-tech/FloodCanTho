@@ -1,18 +1,31 @@
 
 from pathlib import Path
+import math
 
 import rasterio
 from rasterio.warp import transform
-from fastapi import FastAPI, HTTPException
+
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+
+# Router tim kiem dia chi Geoapify
+from backend.routing import router as routing_router
+from backend.route_flood import router as route_flood_router
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "raw"
 
 RETURN_PERIODS = [2, 5, 10, 20, 50, 100]
+
+# Nguong canh bao thu nghiem, khong phai nguong chinh thuc.
 DEPTH_THRESHOLD_M = 0.30
+
+# Nguong hien thi diem ngap nhe tren ban do.
+MIN_DISPLAY_DEPTH_M = 0.05
+
+
 def get_raster_path(period: int) -> Path:
     original = DATA_DIR / f"{period}years.tif"
     compressed = DATA_DIR / f"{period}years_compressed.tif"
@@ -22,20 +35,28 @@ def get_raster_path(period: int) -> Path:
 
     return compressed
 
+
 app = FastAPI(
     title="FloodCanTho API",
-    description="API tra cứu độ sâu ngập mô phỏng",
-    version="1.0.0",
+    description=(
+        "API tra cuu do sau ngap mo phong "
+        "va tim kiem dia chi tai Can Tho"
+    ),
+    version="1.2.0",
 )
 
-# CORS phục vụ phát triển thử nghiệm.
-# Khi triển khai công khai cần giới hạn origin cụ thể.
+# CORS phuc vu ung dung demo.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+# Dang ky Geoapify router.
+# Endpoint moi: GET /api/places/search?q=...
+app.include_router(routing_router)
+app.include_router(route_flood_router)
 
 
 class FloodRequest(BaseModel):
@@ -51,10 +72,10 @@ def home():
         "status": "running",
         "data_type": "simulated_inundation_depth",
         "return_periods": RETURN_PERIODS,
+        "is_realtime_forecast": False,
     }
 
 
-@app.get("/api/health")
 @app.get("/api/health")
 def health():
     files = {
@@ -64,7 +85,8 @@ def health():
 
     return {
         "status": (
-            "ready" if all(files.values())
+            "ready"
+            if all(files.values())
             else "missing_raster_files"
         ),
         "raster_files": files,
@@ -73,7 +95,6 @@ def health():
 
 @app.post("/api/predict")
 def predict(request: FloodRequest):
-
     period = request.return_period_years
 
     if period not in RETURN_PERIODS:
@@ -84,16 +105,14 @@ def predict(request: FloodRequest):
 
     raster_path = get_raster_path(period)
 
-    if not raster_path.exists():
+    if not raster_path.is_file():
         raise HTTPException(
             status_code=500,
             detail=f"Khong tim thay {raster_path.name}",
         )
 
     with rasterio.open(raster_path) as src:
-
-        # Chuyen kinh do, vi do WGS84
-        # sang he toa do cua raster.
+        # Chuyen toa do WGS84 sang CRS cua raster.
         xs, ys = transform(
             "EPSG:4326",
             src.crs,
@@ -104,7 +123,6 @@ def predict(request: FloodRequest):
         x = xs[0]
         y = ys[0]
 
-        # Kiem tra pham vi raster.
         bounds = src.bounds
 
         if not (
@@ -121,17 +139,16 @@ def predict(request: FloodRequest):
                 "message": "Vi tri nam ngoai pham vi raster",
             }
 
-        # Doc pixel tai toa do duoc chon.
+        # Lay mau pixel, giu nguyen xu ly NoData.
         sample = next(
             src.sample(
                 [(x, y)],
-                masked=True
+                masked=True,
             )
         )
 
         value = sample[0]
 
-        # Pixel NoData khong duoc xem la khong ngap.
         if bool(getattr(value, "mask", False)):
             return {
                 "status": "no_data",
@@ -145,7 +162,10 @@ def predict(request: FloodRequest):
 
         depth = float(value)
 
-        if not (-1000 < depth < 10000):
+        if (
+            not math.isfinite(depth)
+            or not (-1000 < depth < 10000)
+        ):
             raise HTTPException(
                 status_code=500,
                 detail="Gia tri raster bat thuong",
@@ -172,3 +192,102 @@ def predict(request: FloodRequest):
                 "khong phai du bao thoi gian thuc"
             ),
         }
+
+
+@app.get("/api/flood-points")
+def get_flood_points(
+    period: int = Query(default=100),
+    step: int = Query(default=35, ge=20, le=150),
+):
+    """
+    Lay cac diem ngap dai dien tu raster mo phong.
+
+    - step: khoang cach lay mau theo pixel.
+    - Bo qua pixel NoData.
+    - Chi lay diem co do sau >= 0.05 m.
+    - Khong phai diem quan trac thuc te.
+    - Khong phai du bao ngap theo thoi gian thuc.
+    """
+
+    if period not in RETURN_PERIODS:
+        raise HTTPException(
+            status_code=400,
+            detail="Chu ky lap lai khong hop le",
+        )
+
+    raster_path = get_raster_path(period)
+
+    if not raster_path.is_file():
+        raise HTTPException(
+            status_code=500,
+            detail=f"Khong tim thay {raster_path.name}",
+        )
+
+    points = []
+
+    with rasterio.open(raster_path) as src:
+        # Doc du lieu theo tung diem, khong tai toan bo raster.
+        # Phu hop hon voi bo nho gioi han cua Render Free.
+        for row in range(0, src.height, step):
+            for col in range(0, src.width, step):
+
+                x, y = src.xy(row, col)
+
+                sample = next(
+                    src.sample(
+                        [(x, y)],
+                        masked=True,
+                    )
+                )
+
+                value = sample[0]
+
+                # Khong hien thi cac pixel khong co du lieu.
+                if bool(getattr(value, "mask", False)):
+                    continue
+
+                depth = float(value)
+
+                if not math.isfinite(depth):
+                    continue
+
+                if not (
+                    MIN_DISPLAY_DEPTH_M <= depth < 10000
+                ):
+                    continue
+
+                lon, lat = transform(
+                    src.crs,
+                    "EPSG:4326",
+                    [x],
+                    [y],
+                )
+
+                points.append(
+                    {
+                        "latitude": round(lat[0], 6),
+                        "longitude": round(lon[0], 6),
+                        "depth_m": round(depth, 4),
+                        "level": (
+                            "high"
+                            if depth >= DEPTH_THRESHOLD_M
+                            else "low"
+                        ),
+                    }
+                )
+
+    return {
+        "status": "success",
+        "return_period_years": period,
+        "sample_step_pixels": step,
+        "minimum_display_depth_m": MIN_DISPLAY_DEPTH_M,
+        "depth_threshold_m": DEPTH_THRESHOLD_M,
+        "total_points": len(points),
+        "data_source": "simulated_raster",
+        "is_realtime_forecast": False,
+        "message": (
+            "Cac diem dai dien duoc lay mau tu raster mo phong. "
+            "Khong phai vi tri quan trac ngap thuc te."
+        ),
+        "points": points,
+    }

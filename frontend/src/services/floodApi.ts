@@ -1,12 +1,16 @@
+
 /**
  * FloodCanTho - Dịch vụ giao tiếp API với Backend Python FastAPI
- * 
- * Quản lý kết nối chuẩn xác với backend FastAPI thực tế:
+ *
+ * Các API:
  * - GET  /api/health
- * - POST /api/predict (với body: { latitude, longitude, return_period_years })
- * 
- * Tuyệt đối không tạo kết quả ngập giả mạo.
- * Phân biệt rõ lỗi kết nối do môi trường Preview (Mixed Content) với lỗi API.
+ * - POST /api/predict
+ * - GET  /api/flood-points (được sử dụng trong MapView.tsx)
+ *
+ * Khi chạy localhost, sử dụng backend trên máy.
+ * Khi triển khai Vercel, sử dụng backend Render.
+ *
+ * Không tạo dữ liệu ngập giả mạo.
  */
 
 import {
@@ -16,16 +20,48 @@ import {
 } from '../types/flood';
 
 const STORAGE_KEY_API_URL = 'floodcantho_backend_api_url';
-export const DEFAULT_API_URL = 'https://floodcantho.onrender.com';;
 
+export const DEFAULT_API_URL =
+  'https://floodcantho.onrender.com';
+
+const LOCAL_API_URL =
+  'http://127.0.0.1:8000';
+
+/**
+ * Lấy địa chỉ backend phù hợp với môi trường.
+ */
 export function getApiBaseUrl(): string {
-  if (typeof window === 'undefined') return DEFAULT_API_URL;
-  return localStorage.getItem(STORAGE_KEY_API_URL) || DEFAULT_API_URL;
+  if (typeof window === 'undefined') {
+    return DEFAULT_API_URL;
+  }
+
+  const hostname = window.location.hostname;
+
+  // Khi chạy frontend trên máy tính.
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1'
+  ) {
+    return LOCAL_API_URL;
+  }
+
+  // Khi chạy trên Vercel hoặc môi trường HTTPS.
+  return (
+    localStorage.getItem(STORAGE_KEY_API_URL) ||
+    DEFAULT_API_URL
+  );
 }
 
+/**
+ * Lưu địa chỉ backend do người dùng cấu hình.
+ * Cấu hình này được dùng trên môi trường triển khai.
+ */
 export function setApiBaseUrl(url: string): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY_API_URL, url.trim().replace(/\/+$/, ''));
+    localStorage.setItem(
+      STORAGE_KEY_API_URL,
+      url.trim().replace(/\/+$/, ''),
+    );
   }
 }
 
@@ -39,20 +75,27 @@ export interface ApiResponse<T> {
 }
 
 /**
- * Kiểm tra xem có đang chạy trong môi trường HTTPS (Cloud Run Preview)
- * và gọi tới endpoint HTTP không bảo mật (localhost) hay không
+ * Kiểm tra trường hợp trang HTTPS gọi backend HTTP localhost.
  */
-export function isMixedContentScenario(baseUrl: string): boolean {
-  if (typeof window === 'undefined') return false;
+export function isMixedContentScenario(
+  baseUrl: string,
+): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
   return (
     window.location.protocol === 'https:' &&
-    (baseUrl.startsWith('http://127.0.0.1') || baseUrl.startsWith('http://localhost'))
+    (
+      baseUrl.startsWith('http://127.0.0.1') ||
+      baseUrl.startsWith('http://localhost')
+    )
   );
 }
 
 /**
- * Kiểm tra kết nối tới Backend FastAPI (GET /api/health)
- * Yêu cầu: status === "ready"
+ * Kiểm tra kết nối FastAPI.
+ * GET /api/health
  */
 export async function checkBackendHealth(): Promise<{
   connected: boolean;
@@ -61,38 +104,62 @@ export async function checkBackendHealth(): Promise<{
   isMixedContentBlocked?: boolean;
 }> {
   const baseUrl = getApiBaseUrl();
-  const mixedContent = isMixedContentScenario(baseUrl);
+
+  const mixedContent =
+    isMixedContentScenario(baseUrl);
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    3500,
+  );
 
   try {
-    const res = await fetch(`${baseUrl}/api/health`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
+    const res = await fetch(
+      `${baseUrl}/api/health`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+        signal: controller.signal,
       },
-      signal: controller.signal,
-    });
+    );
+
     clearTimeout(timeoutId);
 
     if (res.ok) {
-      const data: BackendHealthResponse = await res.json();
-      const isReady = data && (data.status === 'ready' || data.status === 'success' || data.status === 'ok');
+      const data: BackendHealthResponse =
+        await res.json();
+
+      const isReady = Boolean(
+        data &&
+        (
+          data.status === 'ready' ||
+          data.status === 'success' ||
+          data.status === 'ok'
+        ),
+      );
+
       return {
         connected: isReady,
         message: isReady
           ? 'Đã kết nối thành công tới FastAPI backend (status: ready).'
-          : `Máy chủ phản hồi trạng thái: ${data?.status || 'chưa sẵn sàng'}`,
+          : `Máy chủ phản hồi trạng thái: ${
+              data?.status || 'chưa sẵn sàng'
+            }`,
         statusDetails: data,
         isMixedContentBlocked: false,
       };
-    } else {
-      return {
-        connected: false,
-        message: `Máy chủ phản hồi mã lỗi HTTP ${res.status}: ${res.statusText}`,
-        isMixedContentBlocked: false,
-      };
     }
+
+    return {
+      connected: false,
+      message:
+        `Máy chủ phản hồi mã lỗi HTTP ${res.status}: ${res.statusText}`,
+      isMixedContentBlocked: false,
+    };
   } catch (err: any) {
     clearTimeout(timeoutId);
 
@@ -101,7 +168,7 @@ export async function checkBackendHealth(): Promise<{
         connected: false,
         isMixedContentBlocked: true,
         message:
-          'Trình duyệt chặn kết nối từ trang Preview HTTPS xuống HTTP 127.0.0.1:8000 do chính sách Mixed Content & Private Network Access của trình duyệt.',
+          'Trình duyệt chặn kết nối từ trang HTTPS xuống backend HTTP localhost.',
       };
     }
 
@@ -109,39 +176,62 @@ export async function checkBackendHealth(): Promise<{
       connected: false,
       isMixedContentBlocked: false,
       message:
-        err.name === 'AbortError'
-          ? 'Quá thời gian kết nối tới backend (Timeout sau 3.5s)'
-          : `Chưa thể kết nối tới ${baseUrl}. Vui lòng kiểm tra máy chủ FastAPI đã khởi động chưa (uvicorn main:app --port 8000) và cấu hình CORS.`,
+        err?.name === 'AbortError'
+          ? 'Quá thời gian kết nối tới backend (Timeout sau 3.5 giây).'
+          : (
+              `Chưa thể kết nối tới ${baseUrl}. ` +
+              'Vui lòng kiểm tra máy chủ FastAPI và cấu hình CORS.'
+            ),
     };
   }
 }
 
 /**
- * Gửi yêu cầu trích xuất độ sâu ngập tới Backend FastAPI (POST /api/predict)
- * Chỉ gửi: latitude, longitude, return_period_years
+ * Gửi yêu cầu trích xuất độ sâu ngập mô phỏng.
+ *
+ * POST /api/predict
+ *
+ * Body:
+ * {
+ *   latitude,
+ *   longitude,
+ *   return_period_years
+ * }
  */
 export async function requestFloodPrediction(
-  req: FloodPredictionRequest
+  req: FloodPredictionRequest,
 ): Promise<ApiResponse<FloodPredictionResponse>> {
   const baseUrl = getApiBaseUrl();
-  const mixedContent = isMixedContentScenario(baseUrl);
+
+  const mixedContent =
+    isMixedContentScenario(baseUrl);
+
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    6000,
+  );
 
   try {
-    const res = await fetch(`${baseUrl}/api/predict`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+    const res = await fetch(
+      `${baseUrl}/api/predict`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          latitude: req.latitude,
+          longitude: req.longitude,
+          return_period_years:
+            req.return_period_years,
+        }),
+        signal: controller.signal,
       },
-      body: JSON.stringify({
-        latitude: req.latitude,
-        longitude: req.longitude,
-        return_period_years: req.return_period_years,
-      }),
-      signal: controller.signal,
-    });
+    );
+
     clearTimeout(timeoutId);
 
     if (!res.ok) {
@@ -150,11 +240,14 @@ export async function requestFloodPrediction(
         connected: true,
         data: null,
         statusCode: res.status,
-        errorMessage: `Backend báo lỗi HTTP ${res.status}: ${res.statusText}`,
+        errorMessage:
+          `Backend báo lỗi HTTP ${res.status}: ${res.statusText}`,
       };
     }
 
-    const data: FloodPredictionResponse = await res.json();
+    const data: FloodPredictionResponse =
+      await res.json();
+
     return {
       success: true,
       connected: true,
@@ -162,16 +255,20 @@ export async function requestFloodPrediction(
     };
   } catch (err: any) {
     clearTimeout(timeoutId);
+
     return {
       success: false,
       connected: false,
       data: null,
       isMixedContentBlocked: mixedContent,
       errorMessage: mixedContent
-        ? 'Trình duyệt chặn kết nối HTTPS -> HTTP localhost (Mixed Content)'
-        : err.name === 'AbortError'
-        ? 'Hết thời gian chờ phản hồi từ máy chủ backend'
-        : `Chưa kết nối dữ liệu thực (Không thể kết nối đến backend tại ${baseUrl})`,
+        ? 'Trình duyệt chặn kết nối HTTPS -> HTTP localhost (Mixed Content).'
+        : err?.name === 'AbortError'
+          ? 'Hết thời gian chờ phản hồi từ máy chủ backend.'
+          : (
+              'Chưa kết nối được backend tại ' +
+              baseUrl
+            ),
     };
   }
 }
