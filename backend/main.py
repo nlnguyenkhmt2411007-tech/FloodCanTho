@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 # Router tim kiem dia chi Geoapify
 from backend.routing import router as routing_router
 from backend.route_flood import router as route_flood_router
+from backend.ml_predict import router as ml_router
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +24,7 @@ RETURN_PERIODS = [2, 5, 10, 20, 50, 100]
 DEPTH_THRESHOLD_M = 0.30
 
 # Nguong hien thi diem ngap nhe tren ban do.
-MIN_DISPLAY_DEPTH_M = 0.05
+MIN_DISPLAY_DEPTH_M = 0.0
 
 
 def get_raster_path(period: int) -> Path:
@@ -57,6 +58,7 @@ app.add_middleware(
 # Endpoint moi: GET /api/places/search?q=...
 app.include_router(routing_router)
 app.include_router(route_flood_router)
+app.include_router(ml_router)
 
 
 class FloodRequest(BaseModel):
@@ -275,8 +277,20 @@ def get_flood_points(
                         ),
                     }
                 )
+        # Gioi han toi da 150 diem de ban do de quan sat hon.
+    # Chon deu tren danh sach, khong chi lay 150 diem dau.
+    MAX_DISPLAY_POINTS = 150
 
+    if len(points) > MAX_DISPLAY_POINTS:
+        original_points = points
+        points = [
+            original_points[
+                i * (len(original_points) - 1) // (MAX_DISPLAY_POINTS - 1)
+            ]
+            for i in range(MAX_DISPLAY_POINTS)
+        ]
     return {
+        
         "status": "success",
         "return_period_years": period,
         "sample_step_pixels": step,

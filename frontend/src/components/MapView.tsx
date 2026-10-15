@@ -385,9 +385,12 @@ export const MapView: React.FC<MapViewProps> = ({
 
       const isHigh = point.depth_m >= 0.30;
 
-      const color = isHigh
-        ? '#dc2626'
-        : '#f59e0b';
+      const color =
+        point.depth_m >= 0.30
+          ? '#dc2626' // Đỏ: ngập từ 0,30 m
+          : point.depth_m >= 0.05
+            ? '#f59e0b' // Cam: từ 0,05 m đến dưới 0,30 m
+            : '#16a34a'; // Xanh: dưới 0,05 m
 
       const circle = L.circleMarker(
         [point.latitude, point.longitude],
@@ -739,11 +742,20 @@ export const MapView: React.FC<MapViewProps> = ({
     tileErrorCount >= 4 &&
     tileSuccessCount === 0;
 
+  // Điểm xanh: độ sâu dưới 0,05 m
+  const greenCount = floodPoints.filter(
+    (point) => point.depth_m >= 0 && point.depth_m < 0.05,
+  ).length;
+
+  // Điểm cam: từ 0,05 m đến dưới 0,30 m
+  const orangeCount = floodPoints.filter(
+    (point) => point.depth_m >= 0.05 && point.depth_m < 0.30,
+  ).length;
+
+  // Điểm đỏ: từ 0,30 m trở lên
   const highCount = floodPoints.filter(
     (point) => point.depth_m >= 0.30,
   ).length;
-
-  const lowCount = floodPoints.length - highCount;
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 shadow-sm">
@@ -807,11 +819,10 @@ export const MapView: React.FC<MapViewProps> = ({
         </div>
 
         <div
-          className={`self-start px-2.5 py-1.5 rounded-lg text-[11px] font-medium border shadow-sm ${
-            inArea
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-amber-50 text-amber-700 border-amber-200'
-          }`}
+          className={`self-start px-2.5 py-1.5 rounded-lg text-[11px] font-medium border shadow-sm ${inArea
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+            : 'bg-amber-50 text-amber-700 border-amber-200'
+            }`}
         >
           {inArea
             ? 'Trong khung phạm vi nghiên cứu'
@@ -867,8 +878,11 @@ export const MapView: React.FC<MapViewProps> = ({
 
               {!floodError && !floodLoading && (
                 <div className="mt-2 flex gap-3 text-[10px]">
+                  <span className="text-green-700">
+                    🟢 {greenCount} điểm xanh
+                  </span>
                   <span className="text-amber-700">
-                    {lowCount} diem duoi nguong
+                    {orangeCount} điểm cam
                   </span>
                   <span className="text-red-700">
                     {highCount} diem vuot nguong
@@ -935,11 +949,10 @@ export const MapView: React.FC<MapViewProps> = ({
                   onClick={() =>
                     handleSelectProvider(provider.id)
                   }
-                  className={`w-full text-left px-2.5 py-2 rounded-lg ${
-                    activeProviderId === provider.id
-                      ? 'bg-blue-50 text-blue-600 font-semibold'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  className={`w-full text-left px-2.5 py-2 rounded-lg ${activeProviderId === provider.id
+                    ? 'bg-blue-50 text-blue-600 font-semibold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
                 >
                   {provider.name}
                 </button>

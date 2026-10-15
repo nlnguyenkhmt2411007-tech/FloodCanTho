@@ -272,3 +272,90 @@ export async function requestFloodPrediction(
     };
   }
 }
+
+/**
+ * Kết quả phân loại nhị phân từ Random Forest v2.
+ * Nguồn dữ liệu huấn luyện: raster ngập mô phỏng.
+ */
+export interface MlPredictionResponse {
+  status: 'success' | 'outside_coverage' | string;
+  latitude: number;
+  longitude: number;
+  return_period_years: number;
+  ml_model?: string;
+  ml_probability: number | null;
+  ml_prediction: 0 | 1 | null;
+  depth_threshold_m?: number;
+  probability_threshold?: number;
+  data_source?: string;
+  is_realtime_forecast?: boolean;
+  message?: string;
+}
+
+export async function requestMlPrediction(
+  req: FloodPredictionRequest,
+): Promise<ApiResponse<MlPredictionResponse>> {
+  const baseUrl = getApiBaseUrl();
+  const mixedContent = isMixedContentScenario(baseUrl);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    30000,
+  );
+
+  try {
+    const res = await fetch(`${baseUrl}/api/ml-predict`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({
+        latitude: req.latitude,
+        longitude: req.longitude,
+        return_period_years: req.return_period_years,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      return {
+        success: false,
+        connected: true,
+        data: null,
+        statusCode: res.status,
+        errorMessage: `API ML phản hồi HTTP ${res.status}`,
+      };
+    }
+
+    const data: MlPredictionResponse = await res.json();
+
+    return {
+      success: data.status === 'success',
+      connected: true,
+      data,
+      errorMessage:
+        data.status === 'success'
+          ? undefined
+          : data.message || 'Không có kết quả ML tại vị trí này.',
+    };
+  } catch (err: unknown) {
+    const isTimeout =
+      err instanceof Error && err.name === 'AbortError';
+
+    return {
+      success: false,
+      connected: false,
+      data: null,
+      isMixedContentBlocked: mixedContent,
+      errorMessage: mixedContent
+        ? 'Trình duyệt chặn kết nối HTTPS tới HTTP localhost.'
+        : isTimeout
+          ? 'Hết thời gian chờ phản hồi ML.'
+          : `Không kết nối được backend tại ${baseUrl}`,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}

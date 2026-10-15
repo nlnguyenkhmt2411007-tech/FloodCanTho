@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import type { Coordinates, ReturnPeriod } from './types/flood';
 import { Header, ActiveTab } from './components/Header';
 import { FloodMapDashboard } from './components/FloodMapDashboard';
 import { HomeOverview } from './components/HomeOverview';
@@ -12,11 +13,25 @@ import { AboutView } from './components/AboutView';
 import { ApiDocsView } from './components/ApiDocsView';
 import { BackendSettingsModal } from './components/BackendSettingsModal';
 import { checkBackendHealth } from './services/floodApi';
+import IntroScreen from './components/IntroScreen';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('map');
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [showIntro, setShowIntro] = useState(true);
+  const [mlMapSelection, setMlMapSelection] = useState<{
+    coordinates: Coordinates;
+    period: ReturnPeriod;
+  } | null>(null);
+
+  const openMlFromMap = (
+    coordinates: Coordinates,
+    period: ReturnPeriod,
+  ) => {
+    setMlMapSelection({ coordinates, period });
+    setActiveTab('ml');
+  };
 
   // Check backend health on initial load
   useEffect(() => {
@@ -26,6 +41,11 @@ export default function App() {
   }, []);
 
   return (
+    <>
+  {showIntro && (
+    <IntroScreen onFinish={() => setShowIntro(false)} />
+  )}
+    
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
       {/* Navigation Header */}
       <Header
@@ -46,11 +66,12 @@ export default function App() {
             isBackendConnected={isBackendConnected}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onConnectionChange={setIsBackendConnected}
+            onAnalyzeWithMl={openMlFromMap}
           />
         )}
 
         {activeTab === 'ml' && (
-          <MlAnalysisView />
+          <MlAnalysisView mapSelection={mlMapSelection} />
         )}
 
         {activeTab === 'about' && (
@@ -87,7 +108,8 @@ export default function App() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onConnectionChange={setIsBackendConnected}
-      />
-    </div>
-  );
-}
+        />
+        </div>
+      </>
+      );
+    }

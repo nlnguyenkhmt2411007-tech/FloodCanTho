@@ -36,6 +36,10 @@ interface FloodMapDashboardProps {
   isBackendConnected: boolean;
   onOpenSettings: () => void;
   onConnectionChange: (connected: boolean) => void;
+  onAnalyzeWithMl: (
+    coordinates: Coordinates,
+    period: ReturnPeriod,
+  ) => void;
 }
 interface Place {
   name: string;
@@ -123,6 +127,7 @@ export const FloodMapDashboard: React.FC<
   isBackendConnected,
   onOpenSettings,
   onConnectionChange,
+  onAnalyzeWithMl,
 }) => {
     const [coordinates, setCoordinates] =
       useState<Coordinates>({
@@ -904,6 +909,13 @@ export const FloodMapDashboard: React.FC<
               )}
             </section>
             <div className="min-w-0">
+              <button
+                type="button"
+                onClick={() => onAnalyzeWithMl(coordinates, selectedPeriod)}
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
+              >
+                Phân tích điểm này bằng ML
+              </button>
               <LocationInspector
                 coordinates={coordinates}
                 period={selectedPeriod}
