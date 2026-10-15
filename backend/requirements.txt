@@ -2,3 +2,5 @@
 uvicorn
 rasterio
 numpy
+joblib
+scikit-learn
