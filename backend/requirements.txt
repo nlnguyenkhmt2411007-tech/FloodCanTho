@@ -4,3 +4,4 @@ rasterio
 numpy
 joblib
 scikit-learn
+pandas
