@@ -25,8 +25,8 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={() => onSelectTab('overview')}
           className="flex items-center gap-3 cursor-pointer group select-none"
         >
-          <div className="w-10 h-10 shrink-0 transition-transform duration-300 group-hover:scale-105">
-            <NPLogo size={40} />
+          <div className="w-12 h-12 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+            <NPLogo size={48} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -48,8 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => onSelectTab('overview')}
             className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'overview'
-                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
           >
             Trang chủ
@@ -58,8 +58,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => onSelectTab('map')}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'map'
-                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
           >
             <MapPin className="w-4 h-4" />
@@ -69,8 +69,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => onSelectTab('ml')}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'ml'
-                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
           >
             <Cpu className="w-4 h-4" />
@@ -80,8 +80,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => onSelectTab('about')}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'about'
-                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
           >
             <BookOpen className="w-4 h-4" />
@@ -91,8 +91,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => onSelectTab('api')}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'api'
-                ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
+              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
           >
             <Terminal className="w-4 h-4" />
@@ -105,8 +105,8 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenSettings}
             className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${isBackendConnected
-                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+              : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300'
               }`}
             title="Nhấp để cấu hình và kiểm tra kết nối FastAPI"
           >

@@ -15,8 +15,7 @@ export default function IntroScreen({
   const [isLeaving, setIsLeaving] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
 
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const activeSoundsRef = useRef<OscillatorNode[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const leavingRef = useRef(false);
   const onFinishRef = useRef(onFinish);
 
@@ -25,13 +24,25 @@ export default function IntroScreen({
     onFinishRef.current = onFinish;
   }, [onFinish]);
 
+  // Dừng âm thanh MP3
+  const stopSounds = useCallback(() => {
+    const audio = audioRef.current;
+
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+  }, []);
+
   // Bắt đầu chuyển cảnh, tránh gọi nhiều lần
   const finishIntro = useCallback(() => {
     if (leavingRef.current) return;
 
     leavingRef.current = true;
+    stopSounds();
+    setSoundEnabled(false);
     setIsLeaving(true);
-  }, []);
+  }, [stopSounds]);
 
   // Thanh tiến trình 7 giây
   useEffect(() => {
@@ -78,20 +89,7 @@ export default function IntroScreen({
     return () => window.clearTimeout(timeout);
   }, [isLeaving]);
 
-  // Dừng các nốt nhạc đang phát
-  const stopSounds = useCallback(() => {
-    activeSoundsRef.current.forEach((oscillator) => {
-      try {
-        oscillator.stop();
-      } catch {
-        // Nốt đã kết thúc
-      }
-    });
-
-    activeSoundsRef.current = [];
-  }, []);
-
-  // Phát hiệu ứng âm thanh khởi động
+  // Bật / tắt âm thanh intro từ file MP3
   const toggleSound = async () => {
     if (soundEnabled) {
       stopSounds();
@@ -99,55 +97,26 @@ export default function IntroScreen({
       return;
     }
 
+    if (leavingRef.current) return;
+
     try {
-      const context =
-        audioContextRef.current ?? new AudioContext();
+      let audio = audioRef.current;
 
-      audioContextRef.current = context;
-      await context.resume();
+      if (!audio) {
+        audio = new Audio('/intro-processing.mp3');
+        audio.preload = 'auto';
+        audio.volume = 0.4;
+        audioRef.current = audio;
+      }
 
-      stopSounds();
+      audio.currentTime = 0;
+      await audio.play();
 
-      const now = context.currentTime;
-      const frequencies = [220, 330, 440, 660, 880];
-
-      frequencies.forEach((frequency, index) => {
-        const oscillator = context.createOscillator();
-        const gain = context.createGain();
-
-        const startAt = now + index * 0.18;
-        const endAt = startAt + 0.65;
-
-        oscillator.type = 'sine';
-
-        oscillator.frequency.setValueAtTime(
-          frequency,
-          startAt
-        );
-
-        gain.gain.setValueAtTime(
-          0.001,
-          startAt
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-          0.045,
-          startAt + 0.06
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          endAt
-        );
-
-        oscillator.connect(gain);
-        gain.connect(context.destination);
-
-        oscillator.start(startAt);
-        oscillator.stop(endAt);
-
-        activeSoundsRef.current.push(oscillator);
-      });
+      // Nếu intro kết thúc trong lúc chờ phát
+      if (leavingRef.current) {
+        stopSounds();
+        return;
+      }
 
       setSoundEnabled(true);
     } catch (error) {
@@ -155,6 +124,7 @@ export default function IntroScreen({
         'Không thể phát âm thanh intro:',
         error
       );
+      setSoundEnabled(false);
     }
   };
 
@@ -162,7 +132,7 @@ export default function IntroScreen({
   useEffect(() => {
     return () => {
       stopSounds();
-      void audioContextRef.current?.close();
+      audioRef.current = null;
     };
   }, [stopSounds]);
 
@@ -177,13 +147,9 @@ export default function IntroScreen({
     >
       {/* ẢNH NỀN + CAMERA CINEMATIC */}
       <div
-        className="intro-camera pointer-events-none absolute inset-0"
+        className="intro-camera pointer-events-none absolute inset-0 bg-center bg-contain bg-no-repeat md:bg-cover"
         style={{
-          backgroundImage:
-            "url('/np-intro-clean.png')",
-          backgroundPosition: 'center',
-          backgroundSize: 'cover',
-          backgroundRepeat: 'no-repeat',
+          backgroundImage: "url('/np-intro-clean.png')",
         }}
       />
 
