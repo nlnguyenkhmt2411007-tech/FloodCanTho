@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useCallback,
   useEffect,
   useRef,
@@ -10,6 +10,7 @@ import type {
   FloodPredictionResponse,
 } from '../types/flood';
 import { MapView } from './MapView';
+import { FloodLeftCards } from './FloodLeftCards';
 import { ScenarioSelector } from './ScenarioSelector';
 import { LocationInspector } from './LocationInspector';
 import { MapLegend } from './MapLegend';
@@ -520,61 +521,11 @@ export const FloodMapDashboard: React.FC<
     }
     return (
       <div className="w-full space-y-4 py-4">
-        {/* Tieu de dashboard */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <Map className="h-5 w-5 text-blue-600" />
-              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Bản đồ nguy cơ ngập Cần Thơ
-              </h1>
-            </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Khám phá dữ liệu ngập mô phỏng và kiểm tra vị trí
-              trong phạm vi nghiên cứu.
-            </p>
-          </div>
-          <div className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-300">
-            FloodCanTho · CTUT Demo
-          </div>
-        </div>
-        {/* Luu y khoa hoc */}
-        <div className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/20">
-          <button
-            type="button"
-            onClick={() =>
-              setShowScientificNotice(!showScientificNotice)
-            }
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-          >
-            <div className="flex items-center gap-2">
-              <Info className="h-4 w-4 shrink-0 text-amber-600" />
-              <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
-                Lưu ý khoa học và giới hạn dữ liệu
-              </span>
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 shrink-0 text-amber-600 transition-transform ${showScientificNotice ? 'rotate-180' : ''
-                }`}
-            />
-          </button>
-          {showScientificNotice ? (
-            <div className="border-t border-amber-200 px-3 pb-3 pt-2 dark:border-amber-900">
-              <ScientificNotice compact={true} />
-            </div>
-          ) : (
-            <p className="px-4 pb-3 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
-              Độ sâu ngập được mô phỏng theo kịch bản.
-              Ngưỡng 0,30 m là ngưỡng cảnh báo thử nghiệm,
-              không phải dữ liệu ngập thời gian thực.
-            </p>
-          )}
-        </div>
         {/* Dashboard ba cot */}
-        <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-[250px_minmax(0,1fr)_280px] 2xl:grid-cols-[270px_minmax(0,1fr)_300px]">
-          {/* COT TRAI */}
-          <aside className="order-2 min-w-0 space-y-4 xl:order-1">
-            <section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+          {/* TIM DUONG A-B LUON HIEN THI */}
+          <aside className="order-1 min-w-0">
+<section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
                 <Route className="h-5 w-5 text-blue-600" />
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -739,6 +690,90 @@ export const FloodMapDashboard: React.FC<
                 </div>
               </div>
             </section>
+            <FloodLeftCards />
+        {/* Luu y khoa hoc */}
+        <div className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/20">
+          <button
+            type="button"
+            onClick={() =>
+              setShowScientificNotice(!showScientificNotice)
+            }
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Info className="h-4 w-4 shrink-0 text-amber-600" />
+              <span className="text-xs font-semibold text-amber-900 dark:text-amber-200">
+                Lưu ý khoa học và giới hạn dữ liệu
+              </span>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 shrink-0 text-amber-600 transition-transform ${showScientificNotice ? 'rotate-180' : ''
+                }`}
+            />
+          </button>
+          {showScientificNotice ? (
+            <div className="border-t border-amber-200 px-3 pb-3 pt-2 dark:border-amber-900">
+              <ScientificNotice compact={true} />
+            </div>
+          ) : (
+            <p className="px-4 pb-3 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+              Độ sâu ngập được mô phỏng theo kịch bản.
+              Ngưỡng 0,30 m là ngưỡng cảnh báo thử nghiệm,
+              không phải dữ liệu ngập thời gian thực.
+            </p>
+          )}
+        </div>
+
+          </aside>
+          {/* COT GIUA: BAN DO */}
+          <main className="order-2 min-w-0">
+            <div className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <Map className="h-5 w-5 text-blue-600" />
+                      <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                        Bản đồ nguy cơ ngập Cần Thơ
+                      </h1>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Các điểm màu hiển thị kết quả mô phỏng độ sâu ngập trên đường.
+                    </p>
+                  </div>
+                  <span className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+                    Kịch bản: T = {selectedPeriod} năm
+                  </span>
+                </div>
+              </div>
+              <MapView
+                routeData={routeData}
+                selectedCoordinates={coordinates}
+                onSelectCoordinates={handleSelectCoordinates}
+                selectedPeriod={selectedPeriod}
+                onOpenSettings={onOpenSettings}
+                riskLevel={mapRiskLevel}
+                simulatedDepth={
+                  predictionData
+                    ? predictionData.depth_m
+                    : null
+                }
+              />
+            </div>
+            <p className="mt-2 px-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+              Các điểm màu vàng và đỏ được lấy mẫu từ
+              dữ liệu raster ngập mô phỏng. Không phải
+              các điểm quan trắc ngập thực tế.
+            </p>
+          </main>
+          {/* BANG CONG CU: TIM DUONG VA PHAN TICH */}
+          <details className="order-3 col-span-1 min-w-0 xl:col-span-2">
+            <summary className="cursor-pointer rounded-xl border border-blue-200 bg-white px-5 py-4 text-sm font-bold text-blue-700 shadow-sm">
+              Công cụ nâng cao · Phân tích tuyến đường và ML
+            </summary>
+            <aside className="mt-3 min-w-0 space-y-4">
+          {/* KICH BAN VA CHU GIAI */}
+          <div className="min-w-0 space-y-4">
             {/* Chon kich ban */}
             <section className="min-w-0">
               <ScenarioSelector
@@ -756,42 +791,8 @@ export const FloodMapDashboard: React.FC<
               </div>
               <MapLegend />
             </section>
-          </aside>
-          {/* COT GIUA: BAN DO */}
-          <main className="order-1 min-w-0 xl:order-2">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <Map className="h-4 w-4 text-blue-600" />
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Bản đồ ngập mô phỏng
-                  </h2>
-                </div>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  Kịch bản {selectedPeriod} năm
-                </span>
-              </div>
-              <MapView
-                routeData={routeData}
-                selectedCoordinates={coordinates}
-                onSelectCoordinates={handleSelectCoordinates}
-                selectedPeriod={selectedPeriod}
-                riskLevel={mapRiskLevel}
-                simulatedDepth={
-                  predictionData
-                    ? predictionData.depth_m
-                    : null
-                }
-              />
-            </div>
-            <p className="mt-2 px-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-              Các điểm màu vàng và đỏ được lấy mẫu từ
-              dữ liệu raster ngập mô phỏng. Không phải
-              các điểm quan trắc ngập thực tế.
-            </p>
-          </main>
-          {/* COT PHAI: THONG TIN */}
-          <aside className="order-3 min-w-0 space-y-4">
+          </div>
+
             {/* Ket qua dinh tuyen */}
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <div className="mb-3 flex items-center gap-2">
@@ -933,8 +934,13 @@ export const FloodMapDashboard: React.FC<
                 isMixedContentBlocked={isMixedContent}
               />
             </div>
-          </aside>
+            </aside>
+          </details>
         </div>
       </div>
     );
   };
+
+
+
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,7 +56,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4">
+      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 lg:px-6 py-4">
         {activeTab === 'overview' && (
           <HomeOverview onNavigate={setActiveTab} />
         )}
@@ -113,3 +113,4 @@ export default function App() {
       </>
       );
     }
+

@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Layers,
   MapPin,
+  Search, Ruler, ListFilter, BookOpen, Settings, X, Check,
 } from 'lucide-react';
 
 const STUDY_BOUNDS_COORDS = {
@@ -120,6 +121,7 @@ interface MapViewProps {
   riskLevel?: FloodRiskLevel | null;
   simulatedDepth?: number | null;
   isPreviewMode?: boolean;
+  onOpenSettings?: () => void;
 }
 
 export const MapView: React.FC<MapViewProps> = ({
@@ -128,7 +130,20 @@ export const MapView: React.FC<MapViewProps> = ({
   selectedPeriod,
   riskLevel,
   routeData,
+  onOpenSettings,
 }) => {
+  // FLOOD_TOOLBAR_V1: Cong cu noi tren ban do.
+  const [activeTool, setActiveTool] = useState<'layers' | 'search' | 'measure' | 'filter' | 'legend' | null>(null);
+  const [mapSearch, setMapSearch] = useState('');
+  const [mapSearchError, setMapSearchError] = useState('');
+  const [visibleLevels, setVisibleLevels] = useState({ green: true, yellow: true, red: true });
+  const visibleLevelsRef = useRef(visibleLevels);
+  visibleLevelsRef.current = visibleLevels;
+  const [measureMode, setMeasureMode] = useState(false);
+  const measureModeRef = useRef(false);
+  const measureStartRef = useRef<L.LatLng | null>(null);
+  const measureLayerRef = useRef<L.LayerGroup | null>(null);
+  const [measureResult, setMeasureResult] = useState('Chọn điểm đầu tiên trên bản đồ.');
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
@@ -143,8 +158,12 @@ export const MapView: React.FC<MapViewProps> = ({
   const [tileErrorCount, setTileErrorCount] = useState(0);
   const [tileSuccessCount, setTileSuccessCount] = useState(0);
   const [showLayerMenu, setShowLayerMenu] = useState(false);
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (map) map.fire('moveend');
+  }, [visibleLevels]);
 
-  const [showFloodPoints, setShowFloodPoints] = useState(true);
+  const [showFloodPoints, setShowFloodPoints] = useState(false);
   const [showFloodPanel, setShowFloodPanel] = useState(false);
   const [floodPoints, setFloodPoints] = useState<FloodPoint[]>([]);
   const [floodLoading, setFloodLoading] = useState(false);
@@ -217,6 +236,224 @@ export const MapView: React.FC<MapViewProps> = ({
 
     mapInstanceRef.current = map;
 
+    // Lop diem ngap tren duong duoc gan vao ban do hien tai.
+    {
+      const controller = new AbortController();
+    const layer = L.layerGroup().addTo(map);
+    let points: any[] = [];
+
+    // FLOOD_MARKERS_BALANCED_V2: lay mau hien thi, khong sua GeoJSON goc.
+    const drawPoints = () => {
+      layer.clearLayers();
+      const zoom = map.getZoom();
+      const bounds = map.getBounds();
+      // Giu nguyen du lieu goc; chi lay mau diem HIEN THI theo muc zoom.
+      const maxPoints = zoom >= 17 ? 340 : zoom >= 15 ? 230 : 155;
+      const cellSize = zoom >= 17 ? 15 : zoom >= 15 ? 19 : 23;
+      const radius = zoom >= 17 ? 4.5 : zoom >= 15 ? 4.2 : 3.8;
+
+      type RoadPoint = { properties: {
+        latitude: number; longitude: number; depth_m: number;
+        level: 'green' | 'yellow' | 'red'; road_name?: string;
+      } };
+      const visible = (points as RoadPoint[]).filter((feature) => {
+        const p = feature.properties;
+        return visibleLevelsRef.current[p.level] &&
+          Number.isFinite(p.latitude) && Number.isFinite(p.longitude) &&
+          bounds.contains([p.latitude, p.longitude]);
+      });
+      // Phan bo theo tung nhom mau, tranh mau do chiem het suat ve.
+      const groups = {
+        red: visible.filter((f) => f.properties.level === 'red'),
+        yellow: visible.filter((f) => f.properties.level === 'yellow'),
+        green: visible.filter((f) => f.properties.level === 'green'),
+      };
+      const occupied = new Set<string>();
+      const selected: RoadPoint[] = [];
+      const warningPositions: L.LatLngTuple[] = [];
+      const warningCells = new Set<string>();
+      const warningGap = zoom >= 17 ? 100 : zoom >= 15 ? 125 : 150;
+
+      const addFrom = (items: RoadPoint[], limit: number) => {
+        let added = 0;
+        // Lay mau deu tren toan danh sach, khong chi lay cum dau tien.
+        const stride = Math.max(1, Math.floor(items.length / Math.max(1, limit)));
+        for (let pass = 0; pass < stride && added < limit; pass++) {
+          for (let i = pass; i < items.length && added < limit; i += stride) {
+            const feature = items[i];
+            const p = feature.properties;
+            const pixel = map.latLngToContainerPoint([p.latitude, p.longitude]);
+            const key = `${Math.floor(pixel.x / cellSize)}:${Math.floor(pixel.y / cellSize)}`;
+            if (occupied.has(key)) continue;
+            occupied.add(key);
+            selected.push(feature);
+            added++;
+          }
+        }
+      };
+      // Uu tien du diem do de thay ngay khi mo ban do, van giu xanh/vang ro rang.
+      addFrom(groups.red, Math.min(groups.red.length, Math.round(maxPoints * 0.22)));
+      addFrom(groups.yellow, Math.min(groups.yellow.length, Math.round(maxPoints * 0.34)));
+      addFrom(groups.green, maxPoints - selected.length);
+      if (selected.length < maxPoints) {
+        addFrom([...groups.red, ...groups.yellow, ...groups.green], maxPoints - selected.length);
+      }
+
+      for (const feature of selected) {
+        const p = feature.properties;
+        const isRed = p.level === 'red';
+        const color = isRed ? '#F51535' : p.level === 'yellow' ? '#FFC400' : '#00B85B';
+        const circle = L.circleMarker([p.latitude, p.longitude], {
+          radius: isRed ? radius + 1.3 : radius,
+          color: '#ffffff', weight: 1.4, fillColor: color,
+          fillOpacity: 0.97, bubblingMouseEvents: false,
+        });
+        const popup = document.createElement('div');
+        popup.style.cssText = 'min-width:260px;max-width:300px;line-height:1.55;font-family:inherit;color:#0f172a';
+
+        const status = document.createElement('div');
+        status.style.cssText = `padding:10px 12px;border-radius:10px;font-size:13px;font-weight:800;color:${isRed ? '#be123c' : p.level === 'yellow' ? '#a16207' : '#047857'};background:${isRed ? '#fff1f2' : p.level === 'yellow' ? '#fffbeb' : '#ecfdf5'};border:1px solid ${isRed ? '#fecdd3' : p.level === 'yellow' ? '#fde68a' : '#a7f3d0'}`;
+        status.textContent = isRed ? '⚠ Ngập nặng' : p.level === 'yellow' ? '● Ngập nhẹ' : '● Không ngập';
+
+        const road = document.createElement('div');
+        road.style.cssText = 'margin-top:12px;font-size:13px;font-weight:750;color:#334155';
+        road.textContent = String(p.road_name || 'Chưa có tên đường');
+
+        const depthLabel = document.createElement('div');
+        depthLabel.style.cssText = 'margin-top:9px;font-size:11px;font-weight:650;color:#64748b';
+        depthLabel.textContent = 'ĐỘ SÂU NGẬP MÔ PHỎNG';
+
+        const depth = document.createElement('div');
+        depth.style.cssText = `margin-top:1px;font-size:29px;line-height:1.25;font-weight:850;letter-spacing:-0.5px;color:${isRed ? '#e11d48' : p.level === 'yellow' ? '#ca8a04' : '#059669'}`;
+        depth.textContent = `${Number(p.depth_m).toFixed(2).replace('.', ',')} m`;
+
+        const detail = document.createElement('div');
+        detail.style.cssText = 'margin-top:10px;padding:9px 10px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#475569';
+        detail.textContent = `Tọa độ: ${p.latitude.toFixed(6)}, ${p.longitude.toFixed(6)}`;
+
+        const note = document.createElement('div');
+        note.style.cssText = `margin-top:10px;padding:10px 11px;border-radius:8px;font-size:11px;line-height:1.65;color:${isRed ? '#9f1239' : '#475569'};background:${isRed ? '#fff1f2' : '#f8fafc'}`;
+        note.textContent = isRed
+          ? 'Vượt ngưỡng cảnh báo thử nghiệm 0,30 m. Dữ liệu mô phỏng kịch bản 100 năm, không phải cảnh báo ngập thời gian thực.'
+          : 'Dữ liệu mô phỏng kịch bản 100 năm, không phải cảnh báo ngập thời gian thực.';
+
+        popup.append(status, road, depthLabel, depth, detail, note);
+        circle.bindPopup(popup);
+        circle.on('click', () => onSelectCoordinatesRef.current({ lat: p.latitude, lng: p.longitude }));
+        circle.addTo(layer);
+
+        // Bieu tuong do lon chi tai mot so vi tri, ke ca zoom ban dau.
+        if (isRed && zoom >= 13) {
+          const pixel = map.latLngToContainerPoint([p.latitude, p.longitude]);
+          const wx = Math.floor(pixel.x / warningGap);
+          const wy = Math.floor(pixel.y / warningGap);
+          const key = `${wx}:${wy}`;
+          if (!warningCells.has(key) && warningPositions.length < (zoom >= 16 ? 10 : 6)) {
+            warningCells.add(key);
+            warningPositions.push([p.latitude, p.longitude]);
+          }
+        }
+      }
+      for (const position of warningPositions) {
+        const icon = L.divIcon({
+          className: 'flood-warning-icon',
+          html: `
+            <div style="
+              width:44px;
+              height:44px;
+              display:flex;
+              align-items:center;
+              justify-content:center;
+              border-radius:50%;
+              background:rgba(239,68,68,0.18);
+              box-shadow:0 0 0 6px rgba(239,68,68,0.10),
+                         0 0 18px 5px rgba(239,68,68,0.45);
+            ">
+              <div style="
+                width:32px;
+                height:32px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                border-radius:50%;
+                background:#ef233c;
+                border:2px solid white;
+                box-shadow:0 3px 10px rgba(185,28,28,0.45);
+              ">
+                <svg
+                  width="23"
+                  height="23"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  stroke-width="2.2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M10.3 3.9 1.9 18.4A2 2 0 0 0 3.6 21h16.8a2 2 0 0 0 1.7-2.6L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+                  <path d="M12 9v4"/>
+                  <path d="M12 17h.01"/>
+                </svg>
+              </div>
+            </div>
+          `,
+          iconSize: [44, 44],
+          iconAnchor: [22, 22],
+        });
+
+        L.marker(position, {
+          icon,
+          interactive: false,
+          zIndexOffset: 450,
+        }).addTo(layer);
+      }
+    };
+
+    fetch('/data/flood_road_points_100years.geojson', {
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        if (
+          data.type !== 'FeatureCollection' ||
+          !Array.isArray(data.features)
+        ) {
+          throw new Error('GeoJSON khong hop le');
+        }
+
+        points = data.features.map((feature: any) => ({
+          ...feature,
+          properties: {
+            ...feature.properties,
+            longitude: Number(feature.geometry.coordinates[0]),
+            latitude: Number(feature.geometry.coordinates[1]),
+          },
+        }));
+        console.log('Da nap diem ngap:', points.length);
+        drawPoints();
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          console.error('Loi tai diem ngap tren duong:', error);
+        }
+      });
+
+    map.on('moveend zoomend', drawPoints);
+
+
+      map.on('unload', () => {
+        controller.abort();
+        map.off('moveend zoomend', drawPoints);
+        layer.remove();
+      });
+    }
+
+
     L.control.zoom({
       position: 'topright',
     }).addTo(map);
@@ -239,7 +476,7 @@ export const MapView: React.FC<MapViewProps> = ({
       weight: 2.5,
       dashArray: '6, 6',
       fillColor: '#3b82f6',
-      fillOpacity: 0.12,
+      fillOpacity: 0.035,
     }).addTo(map);
 
     studyBox.bindTooltip(
@@ -253,7 +490,28 @@ export const MapView: React.FC<MapViewProps> = ({
     // Nhóm riêng cho các điểm ngập mô phỏng.
     floodLayerRef.current = L.layerGroup().addTo(map);
 
+    measureLayerRef.current = L.layerGroup().addTo(map);
     map.on('click', (e: L.LeafletMouseEvent) => {
+      if (measureModeRef.current) {
+        const measureLayer = measureLayerRef.current;
+        if (!measureLayer) return;
+        if (!measureStartRef.current) {
+          measureStartRef.current = e.latlng;
+          measureLayer.clearLayers();
+          L.circleMarker(e.latlng, { radius: 6, color: '#2563eb', fillColor: '#fff', fillOpacity: 1 }).addTo(measureLayer);
+          setMeasureResult('Chọn điểm thứ hai để đo khoảng cách.');
+        } else {
+          const start = measureStartRef.current;
+          const distance = start.distanceTo(e.latlng);
+          measureLayer.clearLayers();
+          L.polyline([start, e.latlng], { color: '#2563eb', weight: 3, dashArray: '6,5' }).addTo(measureLayer);
+          L.circleMarker(start, { radius: 6, color: '#2563eb' }).addTo(measureLayer);
+          L.circleMarker(e.latlng, { radius: 6, color: '#2563eb' }).addTo(measureLayer);
+          setMeasureResult(distance >= 1000 ? `${(distance / 1000).toFixed(2)} km (đường thẳng)` : `${Math.round(distance)} m (đường thẳng)`);
+          measureStartRef.current = null;
+        }
+        return;
+      }
       const lat = Number(e.latlng.lat.toFixed(6));
       const lng = Number(e.latlng.lng.toFixed(6));
 
@@ -298,6 +556,7 @@ export const MapView: React.FC<MapViewProps> = ({
       mapInstanceRef.current = null;
       markerRef.current = null;
       floodLayerRef.current = null;
+      measureLayerRef.current = null;
       currentTileLayerRef.current = null;
     };
   }, [applyTileLayer]);
@@ -450,6 +709,8 @@ export const MapView: React.FC<MapViewProps> = ({
       circle.addTo(layer);
     });
   }, [floodPoints, showFloodPoints, selectedPeriod]);
+
+
 
   // Marker của vị trí đang được người dùng kiểm tra.
   useEffect(() => {
@@ -673,6 +934,35 @@ export const MapView: React.FC<MapViewProps> = ({
     };
   }, [routeData]);
 
+  const handleToolClick = (tool: 'layers' | 'search' | 'measure' | 'filter' | 'legend') => {
+    if (tool !== 'measure') {
+      measureModeRef.current = false;
+      setMeasureMode(false);
+    }
+    if (tool === 'measure') {
+      const next = activeTool !== 'measure';
+      measureModeRef.current = next;
+      setMeasureMode(next);
+      measureStartRef.current = null;
+      measureLayerRef.current?.clearLayers();
+      setMeasureResult('Chọn điểm đầu tiên trên bản đồ.');
+    }
+    setActiveTool((old) => old === tool ? null : tool);
+  };
+
+  const handleMapSearch = () => {
+    const values = mapSearch.trim().split(/[,;\s]+/).map(Number);
+    if (values.length !== 2 || values.some((n) => !Number.isFinite(n)) ||
+        values[0] < -90 || values[0] > 90 || values[1] < -180 || values[1] > 180) {
+      setMapSearchError('Nhập tọa độ theo mẫu: 10.0465, 105.7505');
+      return;
+    }
+    setMapSearchError('');
+    const [lat, lng] = values;
+    mapInstanceRef.current?.setView([lat, lng], 17, { animate: true });
+    onSelectCoordinatesRef.current({ lat, lng });
+  };
+
   const handleSelectProvider = (id: TileProviderId) => {
     setActiveProviderId(id);
     setShowLayerMenu(false);
@@ -758,7 +1048,7 @@ export const MapView: React.FC<MapViewProps> = ({
   ).length;
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 shadow-sm">
+    <div className="relative w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 shadow-sm lg:pr-[102px]">
 
       {/* Bản đồ Leaflet */}
       <div
@@ -770,6 +1060,55 @@ export const MapView: React.FC<MapViewProps> = ({
         }}
         className="w-full z-0"
       />
+
+      {/* FLOOD_TOOLBAR_V1: Thanh cong cu phai va bang noi. */}
+      <div className="absolute right-0 top-0 z-[500] flex items-start gap-2">
+        {activeTool && (
+          <div className="w-[min(290px,calc(100vw-115px))] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-md text-xs text-slate-800">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <strong className="text-sm">{{ layers: 'Lớp bản đồ', search: 'Tìm địa điểm', measure: 'Đo khoảng cách', filter: 'Lọc điểm ngập', legend: 'Chú giải' }[activeTool]}</strong>
+              <button type="button" aria-label="Đóng bảng công cụ" onClick={() => { setActiveTool(null); setMeasureMode(false); measureModeRef.current = false; }} className="rounded-lg p-1 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+            </div>
+            {activeTool === 'layers' && <div className="space-y-1.5">
+              {TILE_PROVIDERS.map((provider) => <button type="button" key={provider.id} onClick={() => handleSelectProvider(provider.id)} className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left ${activeProviderId === provider.id ? 'border-blue-300 bg-blue-50 text-blue-700' : 'border-slate-200 hover:bg-slate-50'}`}><span>{provider.name}</span>{activeProviderId === provider.id && <Check className="h-4 w-4" />}</button>)}
+              <p className="pt-1 text-[10px] text-slate-500">Nguồn bản đồ nền hiện có. Chưa tích hợp ảnh vệ tinh.</p>
+            </div>}
+            {activeTool === 'search' && <div className="space-y-2">
+              <p className="text-slate-600">Tìm vị trí bằng tọa độ vĩ độ, kinh độ.</p>
+              <input value={mapSearch} onChange={(e) => setMapSearch(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleMapSearch(); }} placeholder="10.0465, 105.7505" aria-label="Tọa độ tìm kiếm" className="w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:border-blue-500" />
+              {mapSearchError && <p className="text-red-600">{mapSearchError}</p>}
+              <button type="button" onClick={handleMapSearch} className="w-full rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white">Đến vị trí</button>
+              <p className="text-[10px] text-slate-500">Tìm theo tên địa điểm có sẵn trong ô A → B bên trái khi API hoạt động.</p>
+            </div>}
+            {activeTool === 'measure' && <div className="space-y-2">
+              <p className="text-slate-600">Nhấn hai vị trí trên bản đồ để đo khoảng cách đường thẳng.</p>
+              <p className="rounded-lg bg-blue-50 px-3 py-2 font-semibold text-blue-700">{measureResult}</p>
+              <button type="button" onClick={() => { measureStartRef.current = null; measureLayerRef.current?.clearLayers(); setMeasureResult('Chọn điểm đầu tiên trên bản đồ.'); }} className="rounded-lg border border-slate-200 px-3 py-2">Đo lại</button>
+              {!measureMode && <p>Chọn lại nút đo để bật chế độ đo.</p>}
+            </div>}
+            {activeTool === 'filter' && <div className="space-y-3">
+              {([{ key: 'green', label: 'Không ngập · dưới 0,05 m', color: '#00B85B' }, { key: 'yellow', label: 'Ngập nhẹ · 0,05–dưới 0,30 m', color: '#FFC400' }, { key: 'red', label: 'Ngập nặng · từ 0,30 m', color: '#F51535' }] as const).map((item) => <label key={item.key} className="flex cursor-pointer items-center gap-2"><input type="checkbox" checked={visibleLevels[item.key]} onChange={(e) => setVisibleLevels((old) => ({ ...old, [item.key]: e.target.checked }))} className="accent-blue-600" /><span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} /><span>{item.label}</span></label>)}
+              <p className="text-[10px] text-slate-500">Lọc lớp điểm mô phỏng từ GeoJSON 100 năm đang hiển thị.</p>
+            </div>}
+            {activeTool === 'legend' && <div className="space-y-2">
+              <p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#00B85B]" />Không ngập: dưới 0,05 m</p>
+              <p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#FFC400]" />Ngập nhẹ: 0,05 đến dưới 0,30 m</p>
+              <p><span className="mr-2 inline-block h-2.5 w-2.5 rounded-full bg-[#F51535]" />Ngập nặng: từ 0,30 m</p>
+              <p className="pt-1 text-[10px] text-slate-500">Dữ liệu mô phỏng 100 năm, không phải cảnh báo thời gian thực. Ngưỡng 0,30 m là thử nghiệm.</p>
+            </div>}
+          </div>
+        )}
+        <div className="flex w-[90px] shrink-0 flex-col items-center gap-1 rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl backdrop-blur-md">
+          {([
+            { id: 'layers', label: 'Lớp bản đồ', Icon: Layers },
+            { id: 'search', label: 'Tìm địa điểm', Icon: Search },
+            { id: 'measure', label: 'Đo khoảng cách', Icon: Ruler },
+            { id: 'filter', label: 'Lọc điểm ngập', Icon: ListFilter },
+            { id: 'legend', label: 'Chú giải', Icon: BookOpen },
+          ] as const).map(({ id, label, Icon }) => <button key={id} type="button" title={label} aria-pressed={activeTool === id} onClick={() => handleToolClick(id)} className={`flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2 text-center text-[10px] font-semibold leading-tight transition ${activeTool === id ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}><Icon className="h-5 w-5" />{label}</button>)}
+          <button type="button" title="Cài đặt" onClick={() => onOpenSettings?.()} className="flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2 text-center text-[10px] font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700"><Settings className="h-5 w-5" />Cài đặt</button>
+        </div>
+      </div>
 
       {/* Thông báo lỗi tải bản đồ nền */}
       {isSevereTileError && (
@@ -901,6 +1240,31 @@ export const MapView: React.FC<MapViewProps> = ({
         </div>
       </div>
 
+
+      {/* Chú giải lớp đường ngập mô phỏng 100 năm */}
+      <div className="absolute bottom-16 left-3 z-[10] max-w-[260px] rounded-xl border border-slate-200 bg-white/95 dark:bg-slate-900/95 dark:border-slate-700 p-3 shadow-lg text-xs">
+        <div className="font-bold text-slate-800 dark:text-slate-100">
+          Ngập mô phỏng - kịch bản 100 năm
+        </div>
+        <div className="mt-2 space-y-1.5 text-slate-700 dark:text-slate-200">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-1.5 rounded bg-[#00B85B]" />
+            Dưới 0,05 m
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-1.5 rounded bg-[#FFC400]" />
+            0,05 đến dưới 0,30 m
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-1.5 rounded bg-[#F51535]" />
+            Từ 0,30 m
+          </div>
+        </div>
+        <p className="mt-2 text-[10px] text-slate-500">
+          Không phải cảnh báo thời gian thực.
+        </p>
+      </div>
+
       {/* Các nút điều khiển bản đồ */}
       <div className="absolute bottom-4 left-3 z-[10] flex items-center gap-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-md">
 
@@ -970,3 +1334,9 @@ export const MapView: React.FC<MapViewProps> = ({
     </div>
   );
 };
+
+
+
+
+
+
