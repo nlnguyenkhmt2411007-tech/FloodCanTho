@@ -1,4 +1,4 @@
-﻿import React, {
+import React, {
   useCallback,
   useEffect,
   useRef,
@@ -10,7 +10,7 @@ import type {
   FloodPredictionResponse,
 } from '../types/flood';
 import { MapView } from './MapView';
-import { FloodLeftCards } from './FloodLeftCards';
+import { FloodLeftCards, MiniStudyMap } from './FloodLeftCards';
 import { ScenarioSelector } from './ScenarioSelector';
 import { LocationInspector } from './LocationInspector';
 import { MapLegend } from './MapLegend';
@@ -682,15 +682,36 @@ export const FloodMapDashboard: React.FC<
                     <span>{routeError}</span>
                   </div>
                 )}
+                {/* ROUTE_SUMMARY_V2: ket qua hien ngay tai noi tim duong */}
+                {routeData && (
+                  <section aria-live="polite" className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50/40 p-3">
+                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-700"><CheckCircle2 className="h-4 w-4" />Đã tìm thấy tuyến đường</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-lg bg-blue-50 p-2"><div className="text-[10px] text-slate-500">Quãng đường</div><div className="text-lg font-bold text-blue-700">{routeData.distance_km !== null ? `${routeData.distance_km} km` : 'Chưa có'}</div></div>
+                      <div className="rounded-lg bg-white p-2"><div className="text-[10px] text-slate-500">Thời gian</div><div className="text-lg font-bold text-slate-900">{routeData.duration_minutes !== null ? `${routeData.duration_minutes} phút` : 'Chưa có'}</div></div>
+                    </div>
+                    {isAnalyzingRouteFlood ? (
+                      <p className="flex items-center gap-2 text-xs text-blue-700"><Loader2 className="h-4 w-4 animate-spin" />Đang phân tích ngập dọc tuyến…</p>
+                    ) : visibleRouteFloodData ? (
+                      <div className="space-y-1 rounded-lg bg-white p-2 text-xs">
+                        <p className="font-bold text-slate-800">Ngập mô phỏng · kịch bản {visibleRouteFloodData.return_period_years} năm</p>
+                        <div className="flex justify-between gap-2"><span>Độ sâu lớn nhất</span><strong>{visibleRouteFloodData.max_depth_m === null ? 'Không có dữ liệu' : `${visibleRouteFloodData.max_depth_m.toFixed(3)} m`}</strong></div>
+                        <div className="flex justify-between gap-2"><span>Điểm từ 0,30 m</span><strong className="text-rose-600">{visibleRouteFloodData.above_threshold_samples}</strong></div>
+                        <div className="flex justify-between gap-2"><span>Dữ liệu hợp lệ</span><strong>{visibleRouteFloodData.valid_samples}/{visibleRouteFloodData.total_samples} ({visibleRouteFloodData.coverage_percent}%)</strong></div>
+                        {(visibleRouteFloodData.outside_raster_samples > 0 || visibleRouteFloodData.nodata_samples > 0) && <p className="rounded-md bg-amber-50 p-2 text-amber-800">Thiếu dữ liệu: {visibleRouteFloodData.outside_raster_samples} điểm ngoài raster và {visibleRouteFloodData.nodata_samples} điểm NoData. Không thể đánh giá đầy đủ toàn tuyến.</p>}
+                        <p className="text-[10px] text-slate-500">Dữ liệu mô phỏng, không phải cảnh báo thời gian thực; không xác nhận tuyến an toàn.</p>
+                      </div>
+                    ) : <p className="text-xs text-amber-700">{routeFloodError ? `Chưa phân tích được ngập: ${routeFloodError}` : 'Chưa có kết quả phân tích ngập cho kịch bản này.'}</p>}
+                    <button type="button" onClick={() => { const el = document.getElementById('flood-advanced-details') as HTMLDetailsElement | null; if (el) { el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }} className="text-xs font-semibold text-blue-700 underline">Xem phân tích chi tiết</button>
+                  </section>
+                )}
                 <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-[11px] leading-relaxed text-blue-800 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-300">
-                  Chọn địa điểm từ danh sách gợi ý để tìm
-                  tuyến đường giao thông thực tế.
-                  Chức năng đánh giá ngập dọc tuyến
-                  chưa được triển khai.
+                  Chọn địa điểm từ danh sách gợi ý để tìm tuyến đường.
+                  Kết quả phân tích ngập mô phỏng sẽ hiện ngay tại đây sau khi tìm thành công.
                 </div>
               </div>
             </section>
-            <FloodLeftCards />
+            <FloodLeftCards showOverview={false} />
         {/* Luu y khoa hoc */}
         <div className="overflow-hidden rounded-xl border border-amber-200 bg-amber-50/80 dark:border-amber-900 dark:bg-amber-950/20">
           <button
@@ -765,9 +786,104 @@ export const FloodMapDashboard: React.FC<
               dữ liệu raster ngập mô phỏng. Không phải
               các điểm quan trắc ngập thực tế.
             </p>
+          {/* VISIBLE_FEATURE_CARDS_V2: 3 cong cu luon hien thi */}
+          <section className="mt-3 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-3" aria-label="Các chức năng chính">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h2 className="mb-2 text-sm font-bold text-slate-900">Bản đồ tổng quan</h2>
+              <MiniStudyMap />
+              <p className="mt-2 text-[11px] text-slate-500">Phạm vi nghiên cứu Cần Thơ, kịch bản ngập mô phỏng.</p>
+            </div>
+                        {/* FEATURE_CARDS_ENHANCED_V3 */}
+            <div className="flex flex-col rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-lg">🧠</span>
+                <div>
+                  <h2 className="text-sm font-bold text-indigo-800">Phân tích ML và công cụ nâng cao</h2>
+                  <p className="text-[11px] text-slate-500">Phân tích dữ liệu ngập mô phỏng</p>
+                </div>
+              </div>
+
+              <p className="mt-3 text-xs leading-relaxed text-slate-600">
+                Khám phá độ sâu ngập tại điểm chọn và đánh giá rủi ro tuyến đường.
+              </p>
+
+              <div className="mt-3 space-y-2 rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
+                <div className="flex items-center gap-2 text-xs text-slate-700">
+                  <span className="text-base">🌊</span>
+                  <span>Dự đoán độ sâu ngập mô phỏng</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-700">
+                  <span className="text-base">🛣️</span>
+                  <span>Đánh giá rủi ro tuyến đường</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-700">
+                  <span className="text-base">📊</span>
+                  <span>Phân tích kết quả và dữ liệu</span>
+                </div>
+              </div>
+
+              <div className="flex-1" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('flood-advanced-details') as HTMLDetailsElement | null;
+                  if (el) {
+                    el.open = true;
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+                className="mt-3 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-bold text-white transition-colors hover:bg-indigo-700"
+              >
+                Mở phân tích ML →
+              </button>
+            </div>
+
+            <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-lg">📖</span>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Giới thiệu &amp; Hướng dẫn sử dụng</h2>
+                  <p className="text-[11px] text-slate-500">Bắt đầu với 3 bước đơn giản</p>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3 rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+                <div className="flex items-start gap-3">
+                  <span className="rounded-lg bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">01</span>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-800">Chọn điểm A và B</div>
+                    <p className="text-[11px] leading-relaxed text-slate-500">Nhập địa điểm hoặc chọn trên bản đồ.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="rounded-lg bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">02</span>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-800">Tìm tuyến đường</div>
+                    <p className="text-[11px] leading-relaxed text-slate-500">Xem tuyến và thông tin ngập mô phỏng.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <span className="rounded-lg bg-blue-100 px-2 py-1 text-xs font-bold text-blue-700">03</span>
+                  <div>
+                    <div className="text-xs font-semibold text-slate-800">Khám phá công cụ</div>
+                    <p className="text-[11px] leading-relaxed text-slate-500">Dùng bộ lọc, chú giải và phân tích ML.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex-1" />
+
+              <p className="mt-3 rounded-lg bg-amber-50 p-2 text-[11px] leading-relaxed text-amber-800">
+                Kịch bản 100 năm là dữ liệu mô phỏng, không phải cảnh báo ngập thời gian thực.
+              </p>
+            </div>
+          </section>
           </main>
           {/* BANG CONG CU: TIM DUONG VA PHAN TICH */}
-          <details className="order-3 col-span-1 min-w-0 xl:col-span-2">
+          <details id="flood-advanced-details" className="order-4 col-span-1 min-w-0 xl:col-span-2">
             <summary className="cursor-pointer rounded-xl border border-blue-200 bg-white px-5 py-4 text-sm font-bold text-blue-700 shadow-sm">
               Công cụ nâng cao · Phân tích tuyến đường và ML
             </summary>

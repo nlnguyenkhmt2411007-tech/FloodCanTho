@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @license
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,11 +33,47 @@ export default function App() {
     setActiveTab('ml');
   };
 
-  // Check backend health on initial load
+    // Tu dong kiem tra lai khi backend Render khoi dong cham.
   useEffect(() => {
-    checkBackendHealth().then((res) => {
-      setIsBackendConnected(res.connected);
-    });
+    let disposed = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const checkConnection = async () => {
+      try {
+        const result = await checkBackendHealth();
+
+        if (disposed) return;
+
+        setIsBackendConnected(result.connected);
+
+        retryTimer = setTimeout(
+          checkConnection,
+          result.connected ? 60000 : 5000,
+        );
+      } catch {
+        if (disposed) return;
+
+        setIsBackendConnected(false);
+        retryTimer = setTimeout(checkConnection, 5000);
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (retryTimer) clearTimeout(retryTimer);
+        void checkConnection();
+      }
+    };
+
+    void checkConnection();
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      disposed = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   return (

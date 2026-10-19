@@ -38,17 +38,21 @@ export function getApiBaseUrl(): string {
   const hostname = window.location.hostname;
 
   // Khi chạy frontend trên máy tính.
-  if (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1'
-  ) {
-    return LOCAL_API_URL;
-  }
 
   // Khi chạy trên Vercel hoặc môi trường HTTPS.
   return (
-    localStorage.getItem(STORAGE_KEY_API_URL) ||
-    DEFAULT_API_URL
+    (() => {
+      const savedUrl = localStorage.getItem(STORAGE_KEY_API_URL);
+
+      if (
+        !savedUrl ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/i.test(savedUrl)
+      ) {
+        return DEFAULT_API_URL;
+      }
+
+      return savedUrl;
+    })()
   );
 }
 
@@ -112,7 +116,7 @@ export async function checkBackendHealth(): Promise<{
 
   const timeoutId = setTimeout(
     () => controller.abort(),
-    3500,
+    15000,
   );
 
   try {
@@ -177,7 +181,7 @@ export async function checkBackendHealth(): Promise<{
       isMixedContentBlocked: false,
       message:
         err?.name === 'AbortError'
-          ? 'Quá thời gian kết nối tới backend (Timeout sau 3.5 giây).'
+          ? 'Quá thời gian kết nối tới backend (Timeout sau 15 giây).'
           : (
               `Chưa thể kết nối tới ${baseUrl}. ` +
               'Vui lòng kiểm tra máy chủ FastAPI và cấu hình CORS.'

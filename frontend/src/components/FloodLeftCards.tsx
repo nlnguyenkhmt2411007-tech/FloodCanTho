@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { BarChart3, Map as MapIcon } from 'lucide-react';
 
@@ -8,7 +8,7 @@ const STUDY_BOUNDS: L.LatLngBoundsExpression = [
   [10.060782, 105.763636],
 ];
 
-function MiniStudyMap() {
+export function MiniStudyMap() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!containerRef.current) return;
@@ -42,7 +42,7 @@ function MiniStudyMap() {
   );
 }
 
-export function FloodLeftCards() {
+export function FloodLeftCards({ showOverview = true }: { showOverview?: boolean }) {
   const [counts, setCounts] = useState<Counts | null>(null);
   const [error, setError] = useState(false);
   useEffect(() => {
@@ -101,14 +101,14 @@ export function FloodLeftCards() {
           {' '}Không phải quan trắc hay cảnh báo ngập thời gian thực.
         </p>
       </section>
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      {showOverview && <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-3 flex items-center gap-2">
           <MapIcon className="h-4 w-4 text-blue-600" />
           <h2 className="text-sm font-bold text-slate-900 dark:text-white">Bản đồ tổng quan</h2>
         </div>
         <MiniStudyMap />
         <p className="mt-2 text-[10px] text-slate-500">Khung xanh nét đứt: phạm vi nghiên cứu tại Cần Thơ.</p>
-      </section>
+      </section>}
     </div>
   );
 }

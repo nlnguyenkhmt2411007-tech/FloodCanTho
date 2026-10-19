@@ -1055,8 +1055,8 @@ export const MapView: React.FC<MapViewProps> = ({
         ref={mapContainerRef}
         style={{
           width: '100%',
-          height: 'min(78vh, 850px)',
-          minHeight: '620px',
+          height: 'clamp(400px, 52vh, 540px)',
+          minHeight: '400px',
         }}
         className="w-full z-0"
       />
