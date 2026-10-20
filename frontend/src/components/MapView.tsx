@@ -1048,7 +1048,7 @@ export const MapView: React.FC<MapViewProps> = ({
   ).length;
 
   return (
-    <div className="relative w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 shadow-sm lg:pr-[102px]">
+    <div className="relative w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 shadow-sm xl:pr-[102px]">
 
       {/* Bản đồ Leaflet */}
       <div
@@ -1062,9 +1062,9 @@ export const MapView: React.FC<MapViewProps> = ({
       />
 
       {/* FLOOD_TOOLBAR_V1: Thanh cong cu phai va bang noi. */}
-      <div className="absolute right-0 top-0 z-[500] flex items-start gap-2">
+      <div className="absolute right-2 top-2 left-2 z-[500] flex flex-col-reverse items-end gap-2 xl:left-auto xl:right-0 xl:top-0 xl:flex-row xl:items-start">
         {activeTool && (
-          <div className="w-[min(290px,calc(100vw-115px))] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-md text-xs text-slate-800">
+          <div className="w-[min(290px,calc(100vw-40px))] max-h-[55vh] overflow-y-auto xl:w-[min(290px,calc(100vw-115px))] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur-md text-xs text-slate-800">
             <div className="mb-3 flex items-center justify-between gap-2">
               <strong className="text-sm">{{ layers: 'Lớp bản đồ', search: 'Tìm địa điểm', measure: 'Đo khoảng cách', filter: 'Lọc điểm ngập', legend: 'Chú giải' }[activeTool]}</strong>
               <button type="button" aria-label="Đóng bảng công cụ" onClick={() => { setActiveTool(null); setMeasureMode(false); measureModeRef.current = false; }} className="rounded-lg p-1 hover:bg-slate-100"><X className="h-4 w-4" /></button>
@@ -1098,15 +1098,15 @@ export const MapView: React.FC<MapViewProps> = ({
             </div>}
           </div>
         )}
-        <div className="flex w-[90px] shrink-0 flex-col items-center gap-1 rounded-2xl border border-slate-200 bg-white/95 p-1.5 shadow-xl backdrop-blur-md">
+        <div className="flex w-full max-w-full min-w-0 shrink-0 flex-row items-center gap-1 overflow-x-auto overscroll-x-contain rounded-2xl xl:w-[90px] xl:flex-col xl:overflow-visible border border-slate-200 bg-white/95 p-1.5 shadow-xl backdrop-blur-md">
           {([
             { id: 'layers', label: 'Lớp bản đồ', Icon: Layers },
             { id: 'search', label: 'Tìm địa điểm', Icon: Search },
             { id: 'measure', label: 'Đo khoảng cách', Icon: Ruler },
             { id: 'filter', label: 'Lọc điểm ngập', Icon: ListFilter },
             { id: 'legend', label: 'Chú giải', Icon: BookOpen },
-          ] as const).map(({ id, label, Icon }) => <button key={id} type="button" title={label} aria-pressed={activeTool === id} onClick={() => handleToolClick(id)} className={`flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2 text-center text-[10px] font-semibold leading-tight transition ${activeTool === id ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}><Icon className="h-5 w-5" />{label}</button>)}
-          <button type="button" title="Cài đặt" onClick={() => onOpenSettings?.()} className="flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2 text-center text-[10px] font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700"><Settings className="h-5 w-5" />Cài đặt</button>
+          ] as const).map(({ id, label, Icon }) => <button key={id} type="button" title={label} aria-pressed={activeTool === id} onClick={() => handleToolClick(id)} className={`flex min-w-[66px] shrink-0 flex-col items-center gap-1 rounded-xl px-1 py-2 text-center text-[10px] xl:w-full font-semibold leading-tight transition ${activeTool === id ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'}`}><Icon className="h-5 w-5" />{label}</button>)}
+          <button type="button" title="Cài đặt" onClick={() => onOpenSettings?.()} className="flex min-w-[66px] shrink-0 flex-col items-center gap-1 rounded-xl px-1 py-2 text-center text-[10px] xl:w-full font-semibold text-slate-600 hover:bg-blue-50 hover:text-blue-700"><Settings className="h-5 w-5" />Cài đặt</button>
         </div>
       </div>
 
@@ -1242,7 +1242,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
 
       {/* Chú giải lớp đường ngập mô phỏng 100 năm */}
-      <div className="absolute bottom-16 left-3 z-[10] max-w-[260px] rounded-xl border border-slate-200 bg-white/95 dark:bg-slate-900/95 dark:border-slate-700 p-3 shadow-lg text-xs">
+      <div className="absolute bottom-16 left-3 z-[10] hidden max-w-[260px] md:block rounded-xl border border-slate-200 bg-white/95 dark:bg-slate-900/95 dark:border-slate-700 p-3 shadow-lg text-xs">
         <div className="font-bold text-slate-800 dark:text-slate-100">
           Ngập mô phỏng - kịch bản 100 năm
         </div>

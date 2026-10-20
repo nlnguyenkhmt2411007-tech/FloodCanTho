@@ -22,7 +22,7 @@ export function MiniStudyMap() {
       keyboard: false,
       touchZoom: false,
     });
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
       maxZoom: 19,
     }).addTo(map);
     L.rectangle(STUDY_BOUNDS, {
@@ -34,7 +34,7 @@ export function MiniStudyMap() {
   }, []);
   return (
     <div className="relative overflow-hidden rounded-xl border border-slate-200">
-      <div ref={containerRef} className="w-full bg-slate-100" style={{ height: "180px", minHeight: "180px", maxHeight: "180px" }} aria-label="Bản đồ tổng quan phạm vi nghiên cứu" />
+      <div ref={containerRef} className="w-full !min-h-[180px] bg-slate-100" style={{ height: "180px", minHeight: "180px", maxHeight: "180px" }} aria-label="Bản đồ tổng quan phạm vi nghiên cứu" />
       <div className="pointer-events-none absolute bottom-2 left-2 z-[400] rounded-md bg-white/95 px-2 py-1 text-[10px] font-medium text-blue-700 shadow-sm">
         Phạm vi nghiên cứu
       </div>

@@ -82,7 +82,7 @@ export default function App() {
     <IntroScreen onFinish={() => setShowIntro(false)} />
   )}
     
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen w-full min-w-0 overflow-x-clip bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
       {/* Navigation Header */}
       <Header
         activeTab={activeTab}
@@ -92,7 +92,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full max-w-[1760px] mx-auto px-4 lg:px-6 py-4">
+      <main className="flex-1 w-full min-w-0 max-w-[1760px] mx-auto px-2 sm:px-4 lg:px-6 py-4">
         {activeTab === 'overview' && (
           <HomeOverview onNavigate={setActiveTab} />
         )}

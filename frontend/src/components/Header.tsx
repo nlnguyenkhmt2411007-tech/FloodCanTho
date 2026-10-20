@@ -19,17 +19,17 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   return (
     <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 h-16">
         {/* Brand */}
         <div
           onClick={() => onSelectTab('overview')}
-          className="flex items-center gap-3 cursor-pointer group select-none"
+          className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 cursor-pointer group select-none"
         >
-          <div className="w-12 h-12 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+          <div className="w-9 h-9 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
             <NPLogo size={48} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 items-center gap-1 sm:gap-2">
               <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">
                 FloodCanTho
               </span>
