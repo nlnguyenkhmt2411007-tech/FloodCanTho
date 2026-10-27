@@ -297,7 +297,7 @@ export interface MlPredictionResponse {
 }
 
 export async function requestMlPrediction(
-  req: FloodPredictionRequest,
+  req: FloodPredictionRequest & { model_name?: 'random_forest_v2' | 'decision_tree' | 'extra_trees' },
 ): Promise<ApiResponse<MlPredictionResponse>> {
   const baseUrl = getApiBaseUrl();
   const mixedContent = isMixedContentScenario(baseUrl);
@@ -319,6 +319,7 @@ export async function requestMlPrediction(
         latitude: req.latitude,
         longitude: req.longitude,
         return_period_years: req.return_period_years,
+        model_name: req.model_name ?? 'random_forest_v2',
       }),
       signal: controller.signal,
     });

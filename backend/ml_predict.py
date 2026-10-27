@@ -14,10 +14,11 @@ from rasterio.warp import transform
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "raw"
 
-MODEL_FILE = (
-    ROOT / "models" /
-    "random_forest_classifier_v2.joblib"
-)
+MODEL_FILES = {
+    "random_forest_v2": ROOT / "models" / "random_forest_classifier_v2.joblib",
+    "decision_tree": ROOT / "models" / "decision_tree_classifier_v2.joblib",
+    "extra_trees": ROOT / "models" / "extra_trees_classifier_v2.joblib",
+}
 
 RETURN_PERIODS = [2, 5, 10, 20, 50, 100]
 DEPTH_THRESHOLD_M = 0.30
@@ -38,14 +39,17 @@ class MLPredictRequest(BaseModel):
     return_period_years: int
 
 
-@lru_cache(maxsize=1)
-def load_model():
-    if not MODEL_FILE.is_file():
+    model_name: str = "random_forest_v2"
+@lru_cache(maxsize=3)
+def load_model(model_name: str):
+    model_file = MODEL_FILES[model_name]
+
+    if not model_file.is_file():
         raise FileNotFoundError(
-            f"Khong tim thay mo hinh: {MODEL_FILE}"
+            f"Khong tim thay mo hinh: {model_file}"
         )
 
-    return joblib.load(MODEL_FILE)
+    return joblib.load(model_file)
 
 
 def get_raster_path(period: int) -> Path:
@@ -66,6 +70,12 @@ def ml_predict(request: MLPredictRequest):
         raise HTTPException(
             status_code=400,
             detail="Chu ky lap lai khong hop le",
+        )
+
+    if request.model_name not in MODEL_FILES:
+        raise HTTPException(
+            status_code=400,
+            detail="Thuat toan ML khong hop le",
         )
 
     raster_path = get_raster_path(period)
@@ -155,7 +165,7 @@ def ml_predict(request: MLPredictRequest):
     )
 
     try:
-        model = load_model()
+        model = load_model(request.model_name)
 
         probability = float(
             model.predict_proba(features)[0, 1]
@@ -182,7 +192,7 @@ def ml_predict(request: MLPredictRequest):
         "latitude": request.latitude,
         "longitude": request.longitude,
         "return_period_years": period,
-        "ml_model": "random_forest_classifier_v2",
+        "ml_model": request.model_name,
         "ml_probability": round(probability, 6),
         "ml_prediction": predicted_class,
         "depth_threshold_m": DEPTH_THRESHOLD_M,
