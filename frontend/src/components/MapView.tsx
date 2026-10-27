@@ -243,10 +243,31 @@ export const MapView: React.FC<MapViewProps> = ({
     let points: any[] = [];
 
     // FLOOD_MARKERS_BALANCED_V2: lay mau hien thi, khong sua GeoJSON goc.
+    let lastDrawKey = '';
     const drawPoints = () => {
-      layer.clearLayers();
       const zoom = map.getZoom();
       const bounds = map.getBounds();
+      const center = map.getCenter();
+      const levels = visibleLevelsRef.current;
+
+      const drawKey = [
+        zoom,
+        center.lat.toFixed(5),
+        center.lng.toFixed(5),
+        bounds.getSouth().toFixed(5),
+        bounds.getWest().toFixed(5),
+        bounds.getNorth().toFixed(5),
+        bounds.getEast().toFixed(5),
+        levels.green,
+        levels.yellow,
+        levels.red,
+        points.length,
+      ].join('|');
+
+      if (drawKey === lastDrawKey) return;
+      lastDrawKey = drawKey;
+
+      layer.clearLayers();
       // Giu nguyen du lieu goc; chi lay mau diem HIEN THI theo muc zoom.
       const maxPoints = zoom >= 17 ? 340 : zoom >= 15 ? 230 : 155;
       const cellSize = zoom >= 17 ? 15 : zoom >= 15 ? 19 : 23;
@@ -443,12 +464,12 @@ export const MapView: React.FC<MapViewProps> = ({
         }
       });
 
-    map.on('moveend zoomend', drawPoints);
+    map.on('zoomend', drawPoints);
 
 
       map.on('unload', () => {
         controller.abort();
-        map.off('moveend zoomend', drawPoints);
+        map.off('zoomend', drawPoints);
         layer.remove();
       });
     }
@@ -536,8 +557,28 @@ export const MapView: React.FC<MapViewProps> = ({
     let resizeObserver: ResizeObserver | null = null;
 
     if (typeof ResizeObserver !== 'undefined') {
+      let lastWidth = container.clientWidth;
+      let lastHeight = container.clientHeight;
+
       resizeObserver = new ResizeObserver(() => {
-        map.invalidateSize();
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        if (
+          width <= 0 ||
+          height <= 0 ||
+          (width === lastWidth && height === lastHeight)
+        ) {
+          return;
+        }
+
+        lastWidth = width;
+        lastHeight = height;
+
+        map.invalidateSize({
+          pan: false,
+          debounceMoveend: true,
+        });
       });
 
       resizeObserver.observe(container);
