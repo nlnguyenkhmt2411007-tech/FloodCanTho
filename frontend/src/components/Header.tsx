@@ -1,6 +1,18 @@
+
 import React from 'react';
-import { Waves, MapPin, Cpu, BookOpen, Terminal, Settings2 } from 'lucide-react';
-import NPLogo from "./NPLogo";
+import {
+  MapPin,
+  BookOpen,
+  Settings2,
+  Menu,
+  X,
+  ArrowUpRight,
+  Waves,
+  ChartNoAxesCombined,
+  House,
+  Code2,
+} from 'lucide-react';
+import NPLogo from './NPLogo';
 
 export type ActiveTab = 'map' | 'ml' | 'about' | 'api' | 'overview';
 
@@ -11,158 +23,154 @@ interface HeaderProps {
   onOpenSettings: () => void;
 }
 
+const navigation = [
+  { id: 'overview', label: 'Tổng quan', icon: House },
+  { id: 'map', label: 'Bản đồ ngập', icon: MapPin },
+  { id: 'ml', label: 'Dự đoán ngập', icon: ChartNoAxesCombined },
+  { id: 'about', label: 'Giới thiệu', icon: BookOpen },
+  { id: 'api', label: 'Tài liệu API', icon: Code2 },
+] as const;
+
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onSelectTab,
   isBackendConnected,
   onOpenSettings,
 }) => {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
+  const navigate = (tab: ActiveTab) => {
+    onSelectTab(tab);
+    setMobileOpen(false);
+  };
+
   return (
-    <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-40">
-      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 h-16">
-        {/* Brand */}
-        <div
-          onClick={() => onSelectTab('overview')}
-          className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 cursor-pointer group select-none"
+    <header className="sticky top-0 z-40 border-b border-[#d9e3df] bg-[#f8f7f2]/95 shadow-[0_4px_25px_rgba(15,44,54,0.05)] backdrop-blur-xl dark:border-[#28424b] dark:bg-[#102b36]/95">
+      <div className="mx-auto flex h-[76px] w-full max-w-[1760px] items-center justify-between gap-4 px-4 sm:px-7 lg:px-10">
+        {/* BRAND */}
+        <button
+          type="button"
+          onClick={() => navigate('overview')}
+          className="group flex min-w-0 shrink-0 items-center gap-3 text-left"
+          aria-label="Về trang Tổng quan FloodCanTho"
         >
-          <div className="w-9 h-9 sm:w-12 sm:h-12 shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center transition-transform duration-300 group-hover:scale-105">
             <NPLogo size={48} />
           </div>
-          <div>
-            <div className="flex min-w-0 items-center gap-1 sm:gap-2">
-              <span className="font-bold text-lg tracking-tight text-slate-900 dark:text-white">
-                FloodCanTho
-              </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 rounded">
-                CTUT Demo
-              </span>
+
+          <div className="min-w-0">
+            <div className="text-[19px] font-extrabold tracking-[-0.035em] text-[#173a45] dark:text-[#f7e9d3]">
+              FloodCanTho
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[220px] sm:max-w-none">
-              Đánh giá nguy cơ ngập lụt bằng Machine Learning
-            </p>
+            <div className="mt-0.5 hidden items-center gap-1.5 text-[10px] font-semibold tracking-[0.1em] text-[#8b7455] dark:text-[#d9bc91] sm:flex">
+              <Waves className="h-3 w-3" />
+              KHÁM PHÁ MIỀN SÔNG NƯỚC
+            </div>
           </div>
-        </div>
+        </button>
 
-        {/* Navigation */}
-        <nav className="hidden md:flex items-center gap-1">
-          <button
-            onClick={() => onSelectTab('overview')}
-            className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'overview'
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-          >
-            Trang chủ
-          </button>
+        {/* DESKTOP NAVIGATION */}
+        <nav
+          className="hidden items-center gap-1 rounded-full border border-[#dce4df] bg-white/70 p-1.5 shadow-sm dark:border-[#36515a] dark:bg-white/5 lg:flex"
+          aria-label="Điều hướng chính"
+        >
+          {navigation.map(({ id, label, icon: Icon }) => {
+            const active = activeTab === id;
 
-          <button
-            onClick={() => onSelectTab('map')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'map'
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-          >
-            <MapPin className="w-4 h-4" />
-            Bản đồ ngập
-          </button>
-
-          <button
-            onClick={() => onSelectTab('ml')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'ml'
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-          >
-            <Cpu className="w-4 h-4" />
-            Phân tích ML
-          </button>
-
-          <button
-            onClick={() => onSelectTab('about')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'about'
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            Giới thiệu
-          </button>
-
-          <button
-            onClick={() => onSelectTab('api')}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'api'
-              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50'
-              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-          >
-            <Terminal className="w-4 h-4" />
-            Tích hợp FastAPI
-          </button>
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => navigate(id)}
+                aria-current={active ? 'page' : undefined}
+                className={`group relative inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-[13px] font-semibold transition-all duration-300 ${
+                  active
+                    ? 'bg-[#173a45] text-[#f9e7c7] shadow-[0_5px_16px_rgba(16,47,59,0.2)] dark:bg-[#e9c995] dark:text-[#173a45]'
+                    : 'text-[#4d646a] hover:bg-[#e8eee9] hover:text-[#173a45] dark:text-[#d3deda] dark:hover:bg-white/10 dark:hover:text-white'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Right action: Backend connection toggle */}
-        <div className="flex items-center gap-2">
+        {/* RIGHT ACTIONS */}
+        <div className="flex shrink-0 items-center gap-2">
           <button
+            type="button"
             onClick={onOpenSettings}
-            className={`flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${isBackendConnected
-              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-              : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300'
-              }`}
-            title="Nhấp để cấu hình và kiểm tra kết nối FastAPI"
+            title="Xem trạng thái và cấu hình kết nối API"
+            aria-label={
+              isBackendConnected
+                ? 'Hệ thống đã kết nối API, mở cài đặt'
+                : 'Hệ thống chưa kết nối API, mở cài đặt'
+            }
+            className="flex items-center gap-2 rounded-full border border-[#dce4df] bg-white/75 px-3 py-2.5 text-xs font-semibold text-[#36565d] transition-all hover:border-[#c6ac84] hover:bg-white dark:border-[#36515a] dark:bg-white/5 dark:text-[#e4e8e5]"
           >
             <span
-              className={`w-2 h-2 rounded-full ${isBackendConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
-                }`}
+              className={`h-2 w-2 rounded-full ${
+                isBackendConnected ? 'bg-emerald-500' : 'bg-amber-500'
+              }`}
             />
-            <span className="hidden sm:inline">
-              {isBackendConnected ? 'FastAPI: Đã kết nối' : 'Chưa kết nối API'}
+            <span className="hidden xl:inline">
+              {isBackendConnected ? 'Đã kết nối' : 'Chưa kết nối'}
             </span>
-            <span className="sm:hidden">
-              {isBackendConnected ? 'API OK' : 'API Off'}
-            </span>
-            <Settings2 className="w-3.5 h-3.5 opacity-70" />
+            <Settings2 className="h-4 w-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMobileOpen((value) => !value)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dce4df] bg-white text-[#173a45] dark:border-[#36515a] dark:bg-white/10 dark:text-white lg:hidden"
+            aria-label={mobileOpen ? 'Đóng menu' : 'Mở menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="fc-mobile-navigation"
+          >
+            {mobileOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </button>
         </div>
       </div>
 
-      {/* Mobile Tab Bar */}
-      <div className="md:hidden flex items-center overflow-x-auto border-t border-slate-200 dark:border-slate-800 px-2 py-1 scrollbar-none">
-        <button
-          onClick={() => onSelectTab('overview')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${activeTab === 'overview' ? 'text-blue-600 font-semibold' : 'text-slate-600'
-            }`}
+      {/* MOBILE / TABLET MENU */}
+      {mobileOpen && (
+        <nav
+          id="fc-mobile-navigation"
+          aria-label="Điều hướng trên thiết bị nhỏ"
+          className="border-t border-[#dce4df] bg-[#f8f7f2] px-4 pb-5 pt-3 shadow-lg dark:border-[#36515a] dark:bg-[#102b36] lg:hidden"
         >
-          Trang chủ
-        </button>
-        <button
-          onClick={() => onSelectTab('map')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${activeTab === 'map' ? 'text-blue-600 font-semibold' : 'text-slate-600'
-            }`}
-        >
-          Bản đồ ngập
-        </button>
-        <button
-          onClick={() => onSelectTab('ml')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${activeTab === 'ml' ? 'text-blue-600 font-semibold' : 'text-slate-600'
-            }`}
-        >
-          Phân tích ML
-        </button>
-        <button
-          onClick={() => onSelectTab('about')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${activeTab === 'about' ? 'text-blue-600 font-semibold' : 'text-slate-600'
-            }`}
-        >
-          Giới thiệu
-        </button>
-        <button
-          onClick={() => onSelectTab('api')}
-          className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap ${activeTab === 'api' ? 'text-blue-600 font-semibold' : 'text-slate-600'
-            }`}
-        >
-          API Backend
-        </button>
-      </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {navigation.map(({ id, label, icon: Icon }) => {
+              const active = activeTab === id;
+
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => navigate(id)}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex items-center justify-between rounded-xl px-4 py-3 text-left text-sm font-semibold transition-colors ${
+                    active
+                      ? 'bg-[#173a45] text-[#f9e7c7] dark:bg-[#e9c995] dark:text-[#173a45]'
+                      : 'bg-white text-[#36565d] hover:bg-[#e9eee9] dark:bg-white/5 dark:text-[#dce7e4] dark:hover:bg-white/10'
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </span>
+                  <ArrowUpRight className="h-4 w-4 opacity-60" />
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
     </header>
   );
 };

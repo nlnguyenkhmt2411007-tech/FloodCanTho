@@ -522,11 +522,11 @@ export const FloodMapDashboard: React.FC<
     return (
       <div className="w-full space-y-4 py-4">
         {/* Dashboard ba cot */}
-        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
           {/* TIM DUONG A-B LUON HIEN THI */}
           <aside className="order-1 min-w-0">
-<section className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+<section className="overflow-visible rounded-[24px] border border-[#d9e4e1] bg-white shadow-[0_10px_30px_rgba(19,58,69,0.06)] dark:border-slate-700 dark:bg-slate-900">
+              <div className="flex items-center gap-2 rounded-t-[24px] border-b border-[#e2e9e5] bg-[#f5f8f5] px-5 py-4 dark:border-slate-800 dark:bg-slate-800">
                 <Route className="h-5 w-5 text-blue-600" />
                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">
                   Tìm đường & cảnh báo ngập
@@ -665,7 +665,7 @@ export const FloodMapDashboard: React.FC<
                   type="button"
                   onClick={handleFindRoute}
                   disabled={isRouting}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-xs font-bold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#173a45] px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#285b65] disabled:cursor-wait disabled:opacity-60"
                 >
                   {isRouting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -748,22 +748,24 @@ export const FloodMapDashboard: React.FC<
           </aside>
           {/* COT GIUA: BAN DO */}
           <main className="order-2 min-w-0">
-            <div className="overflow-visible rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Map className="h-5 w-5 text-blue-600" />
-                      <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
-                        Bản đồ nguy cơ ngập Cần Thơ
-                      </h1>
+            <div className="overflow-visible rounded-[26px] border border-[#d9e4e1] bg-white shadow-[0_14px_45px_rgba(19,58,69,0.08)] dark:border-[#34515b] dark:bg-[#102b36]">
+              <div className="relative overflow-hidden rounded-t-[26px] border-b border-[#e2e9e5] bg-gradient-to-r from-[#f5f8f5] via-white to-[#edf4f2] px-5 py-5 sm:px-7 dark:border-[#34515b] dark:from-[#143541] dark:via-[#102b36] dark:to-[#173d46]">
+                <div className="pointer-events-none absolute -right-10 -top-16 h-40 w-40 rounded-full border border-[#d6e5df]/70 dark:border-white/10" />
+                <div className="pointer-events-none absolute -right-2 -top-8 h-28 w-28 rounded-full border border-[#d6e5df]/70 dark:border-white/10" />
+                <div className="relative flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#173a45] text-[#f3d6a5] shadow-md">
+                      <Map className="h-6 w-6" />
                     </div>
-                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      Các điểm màu hiển thị kết quả mô phỏng độ sâu ngập trên đường.
-                    </p>
+                    <div>
+                      <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#9b7a4e] dark:text-[#e6c494]">KHÁM PHÁ CẦN THƠ</p>
+                      <h1 className="text-lg font-extrabold tracking-tight text-[#173a45] sm:text-xl dark:text-white">Bản đồ ngập lụt Cần Thơ</h1>
+                      <p className="mt-1 text-xs leading-relaxed text-[#60777b] dark:text-[#b8ced0]">Khám phá Cần Thơ qua các kịch bản ngập mô phỏng.</p>
+                    </div>
                   </div>
-                  <span className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
-                    Kịch bản: T = {selectedPeriod} năm
+                  <span className="inline-flex items-center gap-2 rounded-full border border-[#e4d5bd] bg-[#fff9ee] px-4 py-2 text-xs font-bold text-[#886234] dark:border-[#7a6248] dark:bg-[#3a332d] dark:text-[#f2d5a8]">
+                    <span className="h-2 w-2 rounded-full bg-[#c69c5d]" />
+                    Kịch bản {selectedPeriod} năm
                   </span>
                 </div>
               </div>
@@ -787,14 +789,14 @@ export const FloodMapDashboard: React.FC<
               các điểm quan trắc ngập thực tế.
             </p>
           {/* VISIBLE_FEATURE_CARDS_V2: 3 cong cu luon hien thi */}
-          <section className="mt-3 grid min-w-0 grid-cols-1 gap-3 md:grid-cols-3" aria-label="Các chức năng chính">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="mt-4 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3" aria-label="Các chức năng chính">
+            <div className="rounded-[22px] border border-[#d9e4e1] bg-white p-5 shadow-[0_8px_28px_rgba(19,58,69,0.05)]">
               <h2 className="mb-2 text-sm font-bold text-slate-900">Bản đồ tổng quan</h2>
               <MiniStudyMap />
               <p className="mt-2 text-[11px] text-slate-500">Phạm vi nghiên cứu Cần Thơ, kịch bản ngập mô phỏng.</p>
             </div>
                         {/* FEATURE_CARDS_ENHANCED_V3 */}
-            <div className="flex flex-col rounded-2xl border border-indigo-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col rounded-[22px] border border-[#d9e4e1] bg-white p-5 shadow-[0_8px_28px_rgba(19,58,69,0.05)]">
               <div className="flex items-center gap-2">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-lg">🧠</span>
                 <div>
@@ -833,13 +835,13 @@ export const FloodMapDashboard: React.FC<
                     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                   }
                 }}
-                className="mt-3 rounded-xl bg-indigo-600 px-4 py-3 text-xs font-bold text-white transition-colors hover:bg-indigo-700"
+                className="mt-3 rounded-xl bg-[#173a45] px-4 py-3 text-xs font-bold text-white transition-colors hover:bg-[#285b65]"
               >
-                Mở phân tích ML →
+                Mở công cụ phân tích →
               </button>
             </div>
 
-            <div className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col rounded-[22px] border border-[#d9e4e1] bg-white p-5 shadow-[0_8px_28px_rgba(19,58,69,0.05)]">
               <div className="flex items-center gap-2">
                 <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-lg">📖</span>
                 <div>
@@ -884,7 +886,7 @@ export const FloodMapDashboard: React.FC<
           </main>
           {/* BANG CONG CU: TIM DUONG VA PHAN TICH */}
           <details id="flood-advanced-details" className="order-4 col-span-1 min-w-0 xl:col-span-2">
-            <summary className="cursor-pointer rounded-xl border border-blue-200 bg-white px-5 py-4 text-sm font-bold text-blue-700 shadow-sm">
+            <summary className="cursor-pointer rounded-[20px] border border-[#d9e4e1] bg-[#f5f8f5] px-5 py-4 text-sm font-bold text-[#173a45] shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white">
               Công cụ nâng cao · Phân tích tuyến đường và ML
             </summary>
             <aside className="mt-3 min-w-0 space-y-4">

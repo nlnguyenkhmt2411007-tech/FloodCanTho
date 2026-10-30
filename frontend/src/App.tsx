@@ -18,7 +18,7 @@ import IntroScreen from './components/IntroScreen';
 const MUSIC_URL = '/intro-song-nuoc-v3.wav';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('map');
+  const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [isBackendConnected, setIsBackendConnected] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [showIntro, setShowIntro] = useState(true);
